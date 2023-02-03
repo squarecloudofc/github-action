@@ -8,25 +8,26 @@ async function run(): Promise<void> {
     const token: string = core.getInput("token");
     const id: string = core.getInput("application_id");
     const restart: string = core.getInput("restart");
+    const exclusions: string[] = core.getInput("exclusions").split(" ");
 
-    const buffer = zipProject();
+    const buffer = zipProject(exclusions);
 
     const formadata = new FormData();
     formadata.append("file", buffer, { filename: "application.zip" });
     formadata.append("restart", restart);
-    
+
     request("POST", "/commit/" + id, {
       headers: {
         Authorization: token,
-        ...formadata.getHeaders()
+        ...formadata.getHeaders(),
       },
-      body: formadata
+      body: formadata,
     }).then((res) => {
       if (res.code != "SUCCESS") {
-        core.setFailed(JSON.stringify(res))
+        core.setFailed(JSON.stringify(res));
       }
-      
-      console.log(res.message)
+
+      console.log(res.message);
     });
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message);
