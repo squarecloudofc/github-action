@@ -1,5 +1,5 @@
 # Square Cloud Action
-The easiest way to integrate your SquareCloud app with GIT, commit your app from github workflows.
+The easiest way to integrate your Square Cloud app with GIT, commit your app from github workflows.
 
 # Usage
 
@@ -9,10 +9,10 @@ Create a `.yml` workflow file in the `.github/workflows` directory. Here is an [
 You also need to configure your GitHub secrets, of course, to not let your Token API be exposed. See how to [configure your GitHub secrets](#configuring-secrets).
 
 ### Inputs
-- `token` - Your SquareCloud api token. Get your token from the [SquareCloud dashboard](https://squarecloud.app/dashboard/me) `Required`
-- `application_id` - Your SquareCloud application ID. `Required`
+- `token` - Your Square Cloud api token. Get your token from the [Square Cloud dashboard](https://squarecloud.app/dashboard/me) `Required`
+- `application_id` - Your Square Cloud application ID. `Required`
 - `restart` - After commit, does the application need to be restarted? `Optional`, `Default: False`
-- `exclusions` - Files that shouldn't be uploaded to SquareCloud. (by default, includes `.git`) `Optional`
+- `exclusions` - Files that shouldn't be uploaded to Square Cloud. (by default, includes `.git`) `Optional`
 
 ### Example Workflow
 #### Uploading your application and restarting it
