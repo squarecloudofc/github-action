@@ -1,4 +1,4 @@
-name: 'Square Cloud - Action'
+name: 'Square Cloud Easy Action'
 description: 'Deploy your application to square cloud using Github Actions'
 author: 'richaardev'
 branding:
