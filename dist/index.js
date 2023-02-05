@@ -1,4 +1,4 @@
-/******/ (() => { // webpackBootstrap
+require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
 /***/ 3109:
@@ -52,13 +52,14 @@ function run() {
             const token = core.getInput("token");
             const id = core.getInput("application_id");
             const restart = core.getInput("restart");
-            const buffer = (0, zip_1.zipProject)();
+            const exclusions = core.getInput("exclusions").split(" ");
+            const buffer = (0, zip_1.zipProject)(exclusions);
             const formadata = new form_data_1.default();
             formadata.append("file", buffer, { filename: "application.zip" });
             formadata.append("restart", restart);
             (0, request_1.request)("POST", "/commit/" + id, {
                 headers: Object.assign({ Authorization: token }, formadata.getHeaders()),
-                body: formadata
+                body: formadata,
             }).then((res) => {
                 if (res.code != "SUCCESS") {
                     core.setFailed(JSON.stringify(res));
@@ -21557,3 +21558,4 @@ module.exports = require("zlib");
 /******/ 	
 /******/ })()
 ;
+//# sourceMappingURL=index.js.map
