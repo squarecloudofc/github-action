@@ -49,23 +49,25 @@ const zip_1 = __nccwpck_require__(3458);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const token = core.getInput("token");
-            const id = core.getInput("application_id");
-            const restart = core.getInput("restart");
-            const exclusions = core.getInput("exclusions").split(" ");
+            const token = core.getInput("token", { required: true });
+            const id = core.getInput("application_id", { required: true });
+            const restart = core.getBooleanInput("restart");
+            const exclusionsString = core.getInput("exclusions");
+            const exclusions = exclusionsString.trim() == "" ? [] : exclusionsString.trim().split(" ");
             const buffer = (0, zip_1.zipProject)(exclusions);
             const formadata = new form_data_1.default();
             formadata.append("file", buffer, { filename: "application.zip" });
-            formadata.append("restart", restart);
-            (0, request_1.request)("POST", "/commit/" + id, {
+            (0, request_1.request)("POST", `/commit/${id}?restart=${restart}`, {
                 headers: Object.assign({ Authorization: token }, formadata.getHeaders()),
                 body: formadata,
             }).then((res) => {
+                core.debug(JSON.stringify(res));
                 if (res.code != "SUCCESS") {
-                    core.setFailed(JSON.stringify(res));
+                    console.log(JSON.stringify(res));
+                    core.setFailed(`Square Cloud returned code: ${res.code}`);
                 }
                 console.log(res.message);
-            });
+            }).catch((err) => core.setFailed(err));
         }
         catch (error) {
             if (error instanceof Error)
@@ -99,10 +101,15 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.request = void 0;
 const node_fetch_1 = __importDefault(__nccwpck_require__(6882));
 const API_VERSION = "v1";
-const BASE_URL = `https://api.squarecloud.app/${API_VERSION}/public/`;
+const BASE_URL = `https://api.squarecloud.app/${API_VERSION}/public`;
 function request(method, path, options) {
-    return (0, node_fetch_1.default)(BASE_URL + path, Object.assign({ method }, options)).then((response) => __awaiter(this, void 0, void 0, function* () {
-        return (yield response.json());
+    return (0, node_fetch_1.default)(BASE_URL + path, Object.assign({ method, redirect: "follow" }, options)).then((response) => __awaiter(this, void 0, void 0, function* () {
+        const contentType = response.headers.get("Content-Type");
+        if (!contentType || !contentType.includes("application/json")) {
+            console.log(response);
+            throw new Error(`Returned code ${response.status}, but response is not a json`);
+        }
+        return response.json();
     }));
 }
 exports.request = request;
