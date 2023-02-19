@@ -1,6 +1,6 @@
 {
   "name": "squarecloud-action",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Deploy your applications to SquareCloud using Github Actions",
   "main": "lib/main.js",

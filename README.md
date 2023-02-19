@@ -29,9 +29,9 @@ jobs:
           fetch-depth: '0'
           
       - name: Commit to Square Cloud
-        uses: squarecloudofc/squarecloud-action@v1.0.0
+        uses: squarecloudofc/squarecloud-action@v1.1.0
         with:
-          restart: 'true'
+          restart: true
           token: '${{ secrets.SQUARE_TOKEN }}'
           application_id: '${{ secrets.SQUARE_APPLICATIONID }}'
 ```
@@ -50,7 +50,7 @@ jobs:
           fetch-depth: '0'
           
       - name: Commit to Square Cloud
-        uses: squarecloudofc/squarecloud-action@v1.0.0
+        uses: squarecloudofc/squarecloud-action@v1.1.0
         with:
           token: '${{ secrets.SQUARE_TOKEN }}'
           application_id: '${{ secrets.SQUARE_APPLICATIONID }}'
