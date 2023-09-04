@@ -3,7 +3,7 @@ description: 'Deploy your application to square cloud using Github Actions'
 author: 'richaardev'
 branding:
   icon: square
-  color: black
+  color: gray-dark
 
 inputs:
   excludes:
@@ -13,15 +13,12 @@ inputs:
   token:
     required: true
     description: 'square cloud api token'
-    default: null
   application_id:
     required: true
     description: 'square cloud application id'
-    default: null
   restart:
     required: false
     description: 'restart aplication after upload'
-    default: false
 runs:
   using: 'node16'
   main: 'dist/index.js'
