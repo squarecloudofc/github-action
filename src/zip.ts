@@ -1,6 +1,6 @@
 import AdmZip from "adm-zip";
 import fg from "fast-glob";
-import { readdirSync, readFileSync } from "fs";
+import { readFileSync } from "fs";
 import { resolve } from "path";
 
 const defaultExclusions = [".git"];
