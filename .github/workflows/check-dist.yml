@@ -4,42 +4,53 @@ name: Check dist/
 on:
   push:
     branches:
-      - master
+      - main
     paths-ignore:
       - '**.md'
   pull_request:
     paths-ignore:
       - '**.md'
+  workflow_dispatch:
 
 jobs:
   check-dist:
+    name: Check dist/
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      statuses: write
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v4
 
-      - name: Set Node.js 16.x
-        uses: actions/setup-node@v3.6.0
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          node-version: 16.x
+          node-version: 18
+          cache: npm
 
-      - name: Install dependencies
+      - name: Install Dependencies
+        id: install
         run: npm ci
 
-      - name: Rebuild the dist/ directory
+      - name: Build dist/ Directory
+        id: build
+        run: npm run bundle
+
+      - name: Compare Expected and Actual Directories
+        id: diff
         run: |
-          npm run build
-          npm run package
-      - name: Compare the expected and actual dist/ directories
-        run: |
-          if [ "$(git diff --ignore-space-at-eol dist/ | wc -l)" -gt "0" ]; then
-            echo "Detected uncommitted changes after build.  See status below:"
-            git diff
+          if [ "$(git diff --ignore-space-at-eol --text dist/ | wc -l)" -gt "0" ]; then
+            echo "Detected uncommitted changes after build. See status below:"
+            git diff --ignore-space-at-eol --text dist/
             exit 1
           fi
-        id: diff
 
-      # If index.js was different than expected, upload the expected version as an artifact
+      # If index.js was different than expected, upload the expected version as
+      # a workflow artifact.
       - uses: actions/upload-artifact@v3
         if: ${{ failure() && steps.diff.conclusion == 'failure' }}
         with:

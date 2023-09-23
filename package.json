@@ -1,21 +1,28 @@
 {
   "name": "squarecloud-action",
-  "version": "1.1.0",
+  "version": "0.0.0",
   "private": true,
   "description": "Deploy your applications to SquareCloud using Github Actions",
-  "main": "lib/main.js",
+  "keywords": [],
+  "author": "richaardev <me@richaar.dev>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "build": "tsc",
-    "package": "ncc build --source-map --license licenses.txt",
-    "all": "npm run build && npm run package"
+    "bundle": "npm run package",
+    "package": "ncc build src/index.ts --license licenses.txt"
+  },
+  "exports": {
+    ".": "./dist/index.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/richaardev/squarecloud-action.git"
+    "url": "git+https://github.com/squarecloudofc/github-action.git"
   },
-  "keywords": [],
-  "author": "richaardev",
-  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/squarecloudofc/github-action/issues"
+  },
   "dependencies": {
     "@actions/core": "^1.10.0",
     "@squarecloud/api": "^3.0.3",
@@ -25,8 +32,8 @@
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.0",
-    "@types/node": "^18.11.18",
-    "@vercel/ncc": "^0.31.1",
-    "typescript": "^4.9.5"
+    "@types/node": "^20.6.4",
+    "@vercel/ncc": "^0.38.0",
+    "typescript": "^5.2.2"
   }
 }
