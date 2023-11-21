@@ -1,6 +1,6 @@
 name: 'Square Cloud Easy Action'
 description: 'Deploy your application to square cloud using Github Actions'
-author: 'richaardev'
+author: 'richaardev & joaotonaco'
 branding:
   icon: square
   color: gray-dark
