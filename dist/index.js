@@ -19707,7 +19707,7 @@ async function run() {
         const buffer = (0, zip_1.zipProject)(excludes);
         const api = new api_1.SquareCloudAPI(token);
         const application = await api.applications.get(id);
-        core.debug(`Application: ${JSON.stringify(application)}`);
+        core.debug(`Application: ${JSON.stringify({ ...application, client: undefined, backup: undefined, deploys: undefined, files: undefined })}`);
         if (application == undefined) {
             core.setFailed("Square Cloud returned undefined");
             return;
