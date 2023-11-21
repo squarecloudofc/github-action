@@ -15,7 +15,7 @@ async function run(): Promise<void> {
     const api = new SquareCloudAPI(token);
     const application = await api.applications.get(id);
 
-    core.debug(`Application: ${JSON.stringify({ ...application, client: undefined, backup: undefined, deploys: undefined, files: undefined })}`);
+    core.debug(`Application: ${application.name} (${application.id})`);
     
     if (application == undefined) {
       core.setFailed("Square Cloud returned undefined");
