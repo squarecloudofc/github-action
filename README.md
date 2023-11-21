@@ -12,7 +12,7 @@ You also need to configure your GitHub secrets, of course, to not let your Token
 - `token` - Your Square Cloud api token. Get your token from the [Square Cloud dashboard](https://squarecloud.app/dashboard/me) `Required`
 - `application_id` - Your Square Cloud application ID. `Required`
 - `restart` - After commit, does the application need to be restarted? `Optional`, `Default: False`
-- `exclusions` - Files that shouldn't be uploaded to Square Cloud. (by default, includes `.git`) `Optional`
+- `excludes` - Files that shouldn't be uploaded to Square Cloud. (by default, includes `.git`) `Optional`
 
 ### Example Workflow
 #### Uploading your application and restarting it
@@ -54,7 +54,7 @@ jobs:
         with:
           token: '${{ secrets.SQUARE_TOKEN }}'
           application_id: '${{ secrets.SQUARE_APPLICATIONID }}'
-          exclusions: '.vscode docs'
+          excludes: '.vscode docs'
 ```
 
 ### Configuring Secrets
