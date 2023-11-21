@@ -1,5 +1,4 @@
 import * as core from "@actions/core";
-import FormData from "form-data";
 import { SquareCloudAPI } from "@squarecloud/api";
 import { zipProject } from "./zip";
 
@@ -8,13 +7,10 @@ async function run(): Promise<void> {
     const token: string = core.getInput("token", { required: true });
     const id: string = core.getInput("application_id", { required: true });
     const restart: boolean = core.getBooleanInput("restart");
-    const exclusionsString: string = core.getInput("exclusions");
-    const exclusions = exclusionsString.trim() == "" ? [] : exclusionsString.trim().split(" ");
+    const excludesString: string = core.getInput("excludes");
+    const excludes = excludesString.trim() == "" ? [] : excludesString.trim().split(" ");
 
-    const buffer = zipProject(exclusions);
-
-    const formadata = new FormData();
-    formadata.append("file", buffer, { filename: "application.zip" });
+    const buffer = zipProject(excludes);
 
     const api = new SquareCloudAPI(token);
     const application = await api.applications.get(id);

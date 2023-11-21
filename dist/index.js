@@ -2720,362 +2720,6 @@ exports["default"] = Settings;
 
 "use strict";
 
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.validatePathLike = exports.validateBoolean = exports.validateString = void 0;
-const zod_1 = __importDefault(__nccwpck_require__(3301));
-const error_1 = __importDefault(__nccwpck_require__(2949));
-const stringSchema = zod_1.default.coerce.string();
-const booleanSchema = zod_1.default.coerce.boolean();
-const pathLikeSchema = zod_1.default.string().or(zod_1.default.instanceof(Buffer));
-function validateString(value, code, starts) {
-    if (starts) {
-        validateString(starts);
-    }
-    handleParser(stringSchema, value, 'string', code);
-}
-exports.validateString = validateString;
-function validateBoolean(value, code) {
-    handleParser(booleanSchema, value, 'boolean', code);
-}
-exports.validateBoolean = validateBoolean;
-function validatePathLike(value, code) {
-    handleParser(pathLikeSchema, value, 'string or Buffer', code);
-}
-exports.validatePathLike = validatePathLike;
-function handleParser(schema, value, expect, code) {
-    try {
-        schema.parse(value);
-    }
-    catch {
-        throw new error_1.default(code ? `INVALID_${code}` : 'VALIDATION_ERROR', `Expect ${expect}, got ${typeof value}`);
-    }
-}
-//# sourceMappingURL=assertions.js.map
-
-/***/ }),
-
-/***/ 7061:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.SquareCloudAPI = void 0;
-const assertions_1 = __nccwpck_require__(8588);
-const api_1 = __importDefault(__nccwpck_require__(5638));
-const application_1 = __importDefault(__nccwpck_require__(3909));
-const experimental_1 = __importDefault(__nccwpck_require__(1572));
-const user_1 = __importDefault(__nccwpck_require__(3356));
-class SquareCloudAPI {
-    static apiInfo = {
-        latestVersion: 'v2',
-        baseUrl: 'https://api.squarecloud.app/',
-    };
-    apiManager;
-    /** Use experimental features */
-    experimental;
-    /** The applications manager */
-    applications;
-    /** The users manager */
-    users;
-    /**
-     * Creates an API instance
-     *
-     * @param apiKey - Your API Token (generate at [Square Cloud Dashboard](https://squarecloud.app/dashboard))
-     * @param options.experimental - Whether to enable experimental features
-     */
-    constructor(apiKey, options) {
-        (0, assertions_1.validateString)(apiKey, 'API_KEY');
-        this.apiManager = new api_1.default(apiKey);
-        this.experimental = options?.experimental
-            ? new experimental_1.default(this.apiManager)
-            : undefined;
-        this.applications = new application_1.default(this.apiManager);
-        this.users = new user_1.default(this.apiManager);
-    }
-}
-exports.SquareCloudAPI = SquareCloudAPI;
-//# sourceMappingURL=index.js.map
-
-/***/ }),
-
-/***/ 5638:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const error_1 = __importDefault(__nccwpck_require__(2949));
-class APIManager {
-    apiKey;
-    baseUrl = 'https://api.squarecloud.app';
-    constructor(apiKey) {
-        this.apiKey = apiKey;
-    }
-    user(userId) {
-        return this.fetch('user' + (userId ? `/${userId}` : ''));
-    }
-    application(path, appId, params, options) {
-        if (typeof options === 'string') {
-            options = {
-                method: options,
-            };
-        }
-        const url = 'apps' +
-            (appId ? `/${appId}` : '') +
-            `/${path}` +
-            (params ? `?${new URLSearchParams(params)}` : '');
-        return this.fetch(url, options);
-    }
-    async fetch(path, options = {}, version = 'v2', rootPath) {
-        options = {
-            ...options,
-            method: options.method || 'GET',
-            headers: { ...(options.headers || {}), Authorization: this.apiKey },
-        };
-        const res = await fetch(`${this.baseUrl}/${version}${rootPath ? `/${rootPath}` : ''}/${path}`, options).catch((err) => {
-            throw new error_1.default(err.code, err.message);
-        });
-        const data = await res.json();
-        if (!data || data.status === 'error' || !res.ok) {
-            throw new error_1.default(data?.code || 'COMMON_ERROR');
-        }
-        return data;
-    }
-}
-exports["default"] = APIManager;
-//# sourceMappingURL=api.js.map
-
-/***/ }),
-
-/***/ 3909:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const form_data_1 = __importDefault(__nccwpck_require__(4334));
-const promises_1 = __nccwpck_require__(3292);
-const assertions_1 = __nccwpck_require__(8588);
-const error_1 = __importDefault(__nccwpck_require__(2949));
-const user_1 = __nccwpck_require__(6657);
-class ApplicationManager {
-    #apiManager;
-    constructor(apiManager) {
-        this.#apiManager = apiManager;
-    }
-    async get(appId) {
-        const { response } = await this.#apiManager.user();
-        const { applications } = new user_1.FullUser(this.#apiManager, response);
-        if (appId) {
-            (0, assertions_1.validateString)(appId, 'APP_ID');
-            const application = applications.get(appId);
-            if (!application) {
-                throw new error_1.default('APP_NOT_FOUND');
-            }
-            return application;
-        }
-        return applications;
-    }
-    /**
-     * Uploads an application
-     *
-     * @param file - The zip file path or Buffer
-     * @returns The uploaded application data
-     */
-    async create(file) {
-        (0, assertions_1.validatePathLike)(file, 'COMMIT_DATA');
-        if (typeof file === 'string') {
-            file = await (0, promises_1.readFile)(file);
-        }
-        const formData = new form_data_1.default();
-        formData.append('file', file, { filename: 'app.zip' });
-        const data = await this.#apiManager.application('upload', undefined, undefined, {
-            method: 'POST',
-            body: formData.getBuffer(),
-            headers: formData.getHeaders(),
-        });
-        return data.response;
-    }
-}
-exports["default"] = ApplicationManager;
-//# sourceMappingURL=application.js.map
-
-/***/ }),
-
-/***/ 5935:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const error_1 = __importDefault(__nccwpck_require__(2949));
-class BackupManager {
-    #apiManager;
-    appId;
-    constructor(apiManager, appId) {
-        this.#apiManager = apiManager;
-        this.appId = appId;
-    }
-    /** @returns The generated backup URL */
-    async url() {
-        const data = await this.#apiManager.application('backup', this.appId);
-        return data.response.downloadURL;
-    }
-    /** @returns The generated backup buffer */
-    async download() {
-        const url = await this.url();
-        const registryUrl = url.replace('https://squarecloud.app/dashboard/backup/', 'https://registry.squarecloud.app/v1/backup/download/');
-        const res = await fetch(registryUrl)
-            .then((res) => res.arrayBuffer())
-            .catch(() => undefined);
-        if (!res) {
-            throw new error_1.default('BACKUP_DOWNLOAD_FAILED');
-        }
-        return Buffer.from(res);
-    }
-}
-exports["default"] = BackupManager;
-//# sourceMappingURL=backup.js.map
-
-/***/ }),
-
-/***/ 1572:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const assertions_1 = __nccwpck_require__(8588);
-class ExperimentalManager {
-    #apiManager;
-    constructor(apiManager) {
-        this.#apiManager = apiManager;
-    }
-    /**
-     * @experimental
-     * **May have bugs.**
-     * The new Square Cloud experimental AI feature.
-     *
-     * @param prompt.question - Short question for the AI to answer :)
-     * @param prompt.context - Subject, humor or previous conversations
-     */
-    async askAi(prompt) {
-        if (prompt.context) {
-            (0, assertions_1.validateString)(prompt.context);
-        }
-        (0, assertions_1.validateString)(prompt.question);
-        const { response } = await this.#apiManager.fetch('ai', {
-            method: 'POST',
-            body: JSON.stringify({
-                question: prompt.question,
-                prompt: prompt.context,
-            }),
-        }, 'v1', 'experimental');
-        return response;
-    }
-}
-exports["default"] = ExperimentalManager;
-//# sourceMappingURL=experimental.js.map
-
-/***/ }),
-
-/***/ 7567:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const promises_1 = __nccwpck_require__(3292);
-const path_1 = __nccwpck_require__(1017);
-const assertions_1 = __nccwpck_require__(8588);
-class FilesManager {
-    #apiManager;
-    appId;
-    constructor(apiManager, appId) {
-        this.#apiManager = apiManager;
-        this.appId = appId;
-    }
-    /**
-     * Lists the files inside a directory
-     *
-     * @param path - The absolute directory path
-     */
-    async list(path = '/') {
-        (0, assertions_1.validateString)(path, 'LIST_FILES_PATH');
-        const { response } = await this.#apiManager.application('files/list', this.appId, { path });
-        return response;
-    }
-    /**
-     * Reads the specified file content
-     *
-     * @param path - The absolute file path
-     */
-    async read(path) {
-        (0, assertions_1.validateString)(path, 'READ_FILE_PATH');
-        const { response } = await this.#apiManager.application('files/read', this.appId, { path });
-        if (!response) {
-            return;
-        }
-        return Buffer.from(response.data);
-    }
-    /**
-     * Creates a new file
-     *
-     * @param file - The file content
-     * @param fileName - The file name with extension
-     * @param path - The absolute file path
-     */
-    async create(file, fileName, path = '/') {
-        (0, assertions_1.validatePathLike)(file, 'CREATE_FILE');
-        if (typeof file === 'string') {
-            file = await (0, promises_1.readFile)(file);
-        }
-        const { status } = await this.#apiManager.application('files/create', this.appId, undefined, {
-            method: 'POST',
-            body: JSON.stringify({
-                buffer: file.toJSON(),
-                path: (0, path_1.join)(path, fileName),
-            }),
-        });
-        return status === 'success';
-    }
-    /**
-     * Deletes the specified file or directory
-     *
-     * @param path - The absolute file or directory path
-     */
-    async delete(path) {
-        (0, assertions_1.validateString)(path, 'DELETE_FILE_PATH');
-        const { status } = await this.#apiManager.application('files/delete', this.appId, { path }, 'DELETE');
-        return status === 'success';
-    }
-}
-exports["default"] = FilesManager;
-//# sourceMappingURL=files.js.map
-
-/***/ }),
-
-/***/ 3356:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -3100,32 +2744,540 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const assertions_1 = __nccwpck_require__(8588);
-const user_1 = __importStar(__nccwpck_require__(6657));
-class UserManager {
-    #apiManager;
-    constructor(apiManager) {
-        this.#apiManager = apiManager;
+exports.handleParse = exports.validatePathLike = exports.validateBoolean = exports.validateString = void 0;
+const z = __importStar(__nccwpck_require__(3301));
+const structures_1 = __nccwpck_require__(7546);
+const stringSchema = z.coerce.string();
+const booleanSchema = z.coerce.boolean();
+const pathLikeSchema = z.string().or(z.instanceof(Buffer));
+function validateString(value, code) {
+    handleParse({ schema: stringSchema, expect: "string", value, code });
+}
+exports.validateString = validateString;
+function validateBoolean(value, code) {
+    handleParse({ schema: booleanSchema, expect: "boolean", value, code });
+}
+exports.validateBoolean = validateBoolean;
+function validatePathLike(value, code) {
+    handleParse({ schema: pathLikeSchema, expect: "string or Buffer", value, code });
+}
+exports.validatePathLike = validatePathLike;
+function handleParse({ schema, value, expect, code, }) {
+    try {
+        schema.parse(value);
     }
-    async get(userId) {
-        if (userId) {
-            (0, assertions_1.validateString)(userId, 'USER_ID');
-        }
-        const { response } = await this.#apiManager.user(userId);
-        const { email } = response.user;
-        const hasAccess = email && email !== 'Access denied';
-        if (hasAccess) {
-            return new user_1.FullUser(this.#apiManager, response);
-        }
-        return new user_1.default(response);
+    catch {
+        throw new structures_1.SquareCloudAPIError(code ? `INVALID_${code}` : "VALIDATION_ERROR", `Expect ${expect}, got ${typeof value}`);
     }
 }
-exports["default"] = UserManager;
+exports.handleParse = handleParse;
+//# sourceMappingURL=assertions.js.map
+
+/***/ }),
+
+/***/ 7061:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.SquareCloudAPI = void 0;
+/* eslint-disable no-unreachable */
+const assertions_1 = __nccwpck_require__(8588);
+const managers_1 = __nccwpck_require__(3377);
+const types_1 = __nccwpck_require__(4968);
+class SquareCloudAPI extends types_1.TypedEventEmitter {
+    static apiInfo = {
+        latestVersion: "v2",
+        baseUrl: "https://api.squarecloud.app/",
+    };
+    api;
+    /** The applications manager */
+    applications = new managers_1.ApplicationManager(this);
+    /** The users manager */
+    users = new managers_1.UserManager(this);
+    /** The global cache manager */
+    cache = new managers_1.CacheManager();
+    /**
+     * Creates an API instance
+     *
+     * @param apiKey - Your API Token (generate at [Square Cloud Dashboard](https://squarecloud.app/dashboard))
+     * @param options.experimental - Whether to enable experimental features
+     */
+    constructor(apiKey) {
+        super();
+        (0, assertions_1.validateString)(apiKey, "API_KEY");
+        this.api = new managers_1.APIManager(apiKey);
+    }
+}
+exports.SquareCloudAPI = SquareCloudAPI;
+__exportStar(__nccwpck_require__(3377), exports);
+__exportStar(__nccwpck_require__(7546), exports);
+__exportStar(__nccwpck_require__(4968), exports);
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 5638:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.APIManager = void 0;
+const __1 = __nccwpck_require__(7061);
+class APIManager {
+    apiKey;
+    baseUrl = "https://api.squarecloud.app";
+    version = "v2";
+    constructor(apiKey) {
+        this.apiKey = apiKey;
+    }
+    user(userId) {
+        return this.fetch("user" + (userId ? `/${userId}` : ""));
+    }
+    application(path, appId, params, options) {
+        if (typeof options === "string") {
+            options = {
+                method: options,
+            };
+        }
+        const url = "apps" +
+            (appId ? `/${appId}` : "") +
+            (path ? `/${path}` : "") +
+            (params ? `?${new URLSearchParams(params)}` : "");
+        return this.fetch(url, options);
+    }
+    async fetch(path, options = {}) {
+        options.method = options.method || "GET";
+        options.headers = {
+            ...(options.headers || {}),
+            Authorization: this.apiKey,
+        };
+        const res = await fetch(`${this.baseUrl}/${this.version}/${path}`, options).catch((err) => {
+            throw new __1.SquareCloudAPIError(err.code, err.message);
+        });
+        const data = await res.json();
+        if (!data || data.status === "error" || !res.ok) {
+            throw new __1.SquareCloudAPIError(data?.code || "COMMON_ERROR");
+        }
+        return data;
+    }
+}
+exports.APIManager = APIManager;
+//# sourceMappingURL=api.js.map
+
+/***/ }),
+
+/***/ 4463:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ApplicationBackupManager = void 0;
+const index_1 = __nccwpck_require__(7061);
+class ApplicationBackupManager {
+    application;
+    constructor(application) {
+        this.application = application;
+    }
+    /** @returns The generated backup URL */
+    async url() {
+        const data = await this.application.client.api.application("backup", this.application.id);
+        const backup = data.response.downloadURL;
+        this.application.client.emit("backupUpdate", this.application, this.application.cache.backup, backup);
+        this.application.cache.set("backup", backup);
+        return backup;
+    }
+    /** @returns The generated backup buffer */
+    async download() {
+        const url = await this.url();
+        const registryUrl = url.replace("https://squarecloud.app/dashboard/backup/", "https://registry.squarecloud.app/v1/backup/download/");
+        const res = await fetch(registryUrl)
+            .then((res) => res.arrayBuffer())
+            .catch(() => undefined);
+        if (!res) {
+            throw new index_1.SquareCloudAPIError("BACKUP_DOWNLOAD_FAILED");
+        }
+        return Buffer.from(res);
+    }
+}
+exports.ApplicationBackupManager = ApplicationBackupManager;
+//# sourceMappingURL=backup.js.map
+
+/***/ }),
+
+/***/ 7333:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ApplicationCacheManager = void 0;
+class ApplicationCacheManager {
+    status;
+    backup;
+    logs;
+    set(key, value) {
+        Reflect.set(this, key, value);
+    }
+    get(key) {
+        return this[key];
+    }
+    clear(key) {
+        if (key) {
+            Reflect.set(this, key, undefined);
+        }
+        else {
+            Reflect.set(this, "status", undefined);
+            Reflect.set(this, "backup", undefined);
+            Reflect.set(this, "logs", undefined);
+        }
+    }
+}
+exports.ApplicationCacheManager = ApplicationCacheManager;
+//# sourceMappingURL=cache.js.map
+
+/***/ }),
+
+/***/ 9149:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ApplicationDeploysManager = void 0;
+const assertions_1 = __nccwpck_require__(8588);
+class ApplicationDeploysManager {
+    application;
+    constructor(application) {
+        this.application = application;
+    }
+    /**
+     * Integrates Square Cloud with GitHub webhooks
+     *
+     * @param accessToken - The access token for your GitHub repository. You can find this in your [GitHub Tokens Classic](https://github.com/settings/tokens/new)
+     */
+    async setGithubWebhook(accessToken) {
+        (0, assertions_1.validateString)(accessToken);
+        const data = await this.application.client.api.application("deploy/git-webhook", this.application.id, undefined, {
+            method: "POST",
+            body: JSON.stringify({ access_token: accessToken }),
+        });
+        return data.status === "success";
+    }
+    /**
+     * Gets the last 10 deployments of an application from the last 24 hours
+     */
+    async list() {
+        const data = await this.application.client.api.application("deploys/list", this.application.id);
+        return data?.response;
+    }
+}
+exports.ApplicationDeploysManager = ApplicationDeploysManager;
+//# sourceMappingURL=deploys.js.map
+
+/***/ }),
+
+/***/ 7916:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ApplicationFilesManager = void 0;
+const assertions_1 = __nccwpck_require__(8588);
+const promises_1 = __nccwpck_require__(3292);
+const path_1 = __nccwpck_require__(1017);
+class ApplicationFilesManager {
+    application;
+    constructor(application) {
+        this.application = application;
+    }
+    /**
+     * Lists the files inside a directory
+     *
+     * @param path - The absolute directory path
+     */
+    async list(path = "/") {
+        (0, assertions_1.validateString)(path, "LIST_FILES_PATH");
+        const { response } = await this.application.client.api.application("files/list", this.application.id, { path });
+        return response;
+    }
+    /**
+     * Reads the specified file content
+     *
+     * @param path - The absolute file path
+     */
+    async read(path) {
+        (0, assertions_1.validateString)(path, "READ_FILE_PATH");
+        const { response } = await this.application.client.api.application("files/read", this.application.id, { path });
+        if (!response) {
+            return;
+        }
+        return Buffer.from(response.data);
+    }
+    /**
+     * Creates a new file
+     *
+     * @param file - The file content
+     * @param fileName - The file name with extension
+     * @param path - The absolute file path
+     */
+    async create(file, fileName, path = "/") {
+        (0, assertions_1.validatePathLike)(file, "CREATE_FILE");
+        if (typeof file === "string") {
+            file = await (0, promises_1.readFile)(file);
+        }
+        const { status } = await this.application.client.api.application("files/create", this.application.id, undefined, {
+            method: "POST",
+            body: JSON.stringify({
+                buffer: file.toJSON(),
+                path: (0, path_1.join)(path, fileName),
+            }),
+        });
+        return status === "success";
+    }
+    /**
+     * Deletes the specified file or directory
+     *
+     * @param path - The absolute file or directory path
+     */
+    async delete(path) {
+        (0, assertions_1.validateString)(path, "DELETE_FILE_PATH");
+        const { status } = await this.application.client.api.application("files/delete", this.application.id, { path }, "DELETE");
+        return status === "success";
+    }
+}
+exports.ApplicationFilesManager = ApplicationFilesManager;
+//# sourceMappingURL=files.js.map
+
+/***/ }),
+
+/***/ 8553:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ApplicationManager = void 0;
+const assertions_1 = __nccwpck_require__(8588);
+const index_1 = __nccwpck_require__(7061);
+const form_data_1 = __importDefault(__nccwpck_require__(4334));
+const promises_1 = __nccwpck_require__(3292);
+class ApplicationManager {
+    client;
+    constructor(client) {
+        this.client = client;
+    }
+    async get(applicationId) {
+        const { response } = await this.client.api.user();
+        const user = new index_1.User(this.client, response);
+        this.client.emit("userUpdate", this.client.cache.user, user);
+        this.client.cache.set("user", user);
+        if (applicationId) {
+            (0, assertions_1.validateString)(applicationId, "APP_ID");
+            const application = user.applications.get(applicationId);
+            if (!application) {
+                throw new index_1.SquareCloudAPIError("APP_NOT_FOUND");
+            }
+            return application.fetch();
+        }
+        return user.applications;
+    }
+    /**
+     * Uploads an application
+     *
+     * @param file - The zip file path or Buffer
+     * @returns The uploaded application data
+     */
+    async create(file) {
+        (0, assertions_1.validatePathLike)(file, "COMMIT_DATA");
+        if (typeof file === "string") {
+            file = await (0, promises_1.readFile)(file);
+        }
+        const formData = new form_data_1.default();
+        formData.append("file", file, { filename: "app.zip" });
+        const data = await this.client.api.application("upload", undefined, undefined, {
+            method: "POST",
+            body: formData.getBuffer(),
+            headers: formData.getHeaders(),
+        });
+        return data.response;
+    }
+    /**
+     * Returns the status for all your applications
+     */
+    async status() {
+        const data = await this.client.api.application("all/status");
+        return data.response.map((status) => new index_1.SimpleApplicationStatus(this.client, status));
+    }
+}
+exports.ApplicationManager = ApplicationManager;
+__exportStar(__nccwpck_require__(4463), exports);
+__exportStar(__nccwpck_require__(7333), exports);
+__exportStar(__nccwpck_require__(9149), exports);
+__exportStar(__nccwpck_require__(7916), exports);
+__exportStar(__nccwpck_require__(6761), exports);
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 6761:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ApplicationNetworkManager = void 0;
+const assertions_1 = __nccwpck_require__(8588);
+class ApplicationNetworkManager {
+    application;
+    constructor(application) {
+        this.application = application;
+    }
+    /**
+     * Integrates your website with a custom domain
+     * - Requires [Senior plan](https://squarecloud.app/plans) or higher
+     *
+     * @param domain - The custom domain you want to use (e.g. yoursite.com)
+     */
+    async setCustomDomain(domain) {
+        (0, assertions_1.validateString)(domain, "CUSTOM_DOMAIN");
+        const data = await this.application.client.api.application(`network/custom/${encodeURIComponent(domain)}`, this.application.id, undefined, "POST");
+        return data.status === "success";
+    }
+    /**
+     * Gets analytics for a custom domain
+     * - Requires [Senior plan](https://squarecloud.app/plans) or higher
+     * - Requires the application to have an integrated custom domain
+     */
+    async analytics() {
+        const data = await this.application.client.api.application("network/analytics", this.application.id);
+        return data?.response;
+    }
+}
+exports.ApplicationNetworkManager = ApplicationNetworkManager;
+//# sourceMappingURL=network.js.map
+
+/***/ }),
+
+/***/ 4976:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.CacheManager = void 0;
+class CacheManager {
+    user;
+    set(key, value) {
+        Reflect.set(this, key, value);
+    }
+    get(key) {
+        return this[key];
+    }
+    clear() {
+        Reflect.set(this, "user", undefined);
+    }
+}
+exports.CacheManager = CacheManager;
+//# sourceMappingURL=cache.js.map
+
+/***/ }),
+
+/***/ 3377:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+__exportStar(__nccwpck_require__(5638), exports);
+__exportStar(__nccwpck_require__(8553), exports);
+__exportStar(__nccwpck_require__(4976), exports);
+__exportStar(__nccwpck_require__(3356), exports);
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 3356:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.UserManager = void 0;
+const __1 = __nccwpck_require__(7061);
+class UserManager {
+    client;
+    constructor(client) {
+        this.client = client;
+    }
+    /**
+     * Gets a user's informations
+     *
+     * @param userId - The user ID, if not provided it will get your own information
+     */
+    async get() {
+        const { response } = await this.client.api.user();
+        const user = new __1.User(this.client, response);
+        this.client.emit("userUpdate", this.client.cache.user, user);
+        this.client.cache.set("user", user);
+        return user;
+    }
+}
+exports.UserManager = UserManager;
 //# sourceMappingURL=user.js.map
 
 /***/ }),
 
-/***/ 9959:
+/***/ 3993:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -3134,112 +3286,109 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Application = void 0;
+const assertions_1 = __nccwpck_require__(8588);
+const index_1 = __nccwpck_require__(7061);
+const managers_1 = __nccwpck_require__(3377);
 const form_data_1 = __importDefault(__nccwpck_require__(4334));
 const promises_1 = __nccwpck_require__(3292);
-const assertions_1 = __nccwpck_require__(8588);
-const backup_1 = __importDefault(__nccwpck_require__(5935));
-const files_1 = __importDefault(__nccwpck_require__(7567));
 /**
  * Represents a Square Cloud application
  *
  * @constructor
- * @param apiManager - The APIManager for this application
+ * @param client - The client for this application
  * @param data - The data from this application
  */
 class Application {
-    /** The application Id */
+    client;
+    /** The application ID */
     id;
     /** The application display name */
-    tag;
+    name;
+    /** The application description */
+    description;
     /** The url to manage the application via web */
     url;
+    /** The application avatar URL */
+    avatar;
+    /** The application current cluster */
+    cluster;
     /** The application total ram */
     ram;
     /**
      * The application programming language
      *
-     * - 'javascript'
-     * - 'typescript'
-     * - 'python'
-     * - 'java'
-     * - 'rust'
-     * - 'go'
+     * - `javascript`
+     * - `typescript`
+     * - `python`
+     * - `java`
+     * - `elixir`
+     * - `rust`
+     * - `go`
+     * - `php`
      */
-    lang;
-    /** The application plan tier ('free' or 'paid') */
-    tier;
-    /** The application avatar URL */
-    avatar;
-    /** The application current cluster */
-    cluster;
-    /** Whether the application is a website or not */
-    isWebsite;
+    language;
+    /** Whether this application has GitHub integration configured or not */
+    gitIntegration;
     /** Files manager for this application */
-    files;
+    files = new managers_1.ApplicationFilesManager(this);
     /** Backup manager for this application */
-    backup;
-    /** @private API manager for this application */
-    #apiManager;
-    constructor(apiManager, data) {
+    backup = new managers_1.ApplicationBackupManager(this);
+    /** Deploys manager for this application */
+    deploys = new managers_1.ApplicationDeploysManager(this);
+    /** Cache manager for this application */
+    cache = new managers_1.ApplicationCacheManager();
+    constructor(client, data) {
+        this.client = client;
         this.id = data.id;
-        this.tag = data.tag;
-        this.ram = data.ram;
-        this.lang = data.lang;
-        this.tier = data.type;
+        this.name = data.name;
+        this.description = data.desc;
         this.avatar = data.avatar;
         this.cluster = data.cluster;
-        this.isWebsite = data.isWebsite;
+        this.ram = data.ram;
+        this.language = data.language;
+        this.gitIntegration = data.gitIntegration;
         this.url = `https://squarecloud.app/dashboard/app/${data.id}`;
-        this.files = new files_1.default(apiManager, data.id);
-        this.backup = new backup_1.default(apiManager, data.id);
-        this.#apiManager = apiManager;
     }
     /** @returns The application current status information */
     async getStatus() {
-        const data = await this.#apiManager.application('status', this.id);
-        const { network, cpu: cpuUsage, ram: ramUsage, storage: storageUsage, requests, running, status, uptime, time, } = data.response;
-        return {
-            status,
-            running,
-            network,
-            requests,
-            cpuUsage,
-            ramUsage,
-            storageUsage,
-            uptimeTimestamp: uptime || 0,
-            uptime: uptime ? new Date(uptime) : undefined,
-            lastCheckTimestamp: time || 0,
-            lastCheck: time ? new Date(time) : undefined,
-        };
+        const data = await this.client.api.application("status", this.id);
+        const status = new index_1.ApplicationStatus(this.client, data.response, this.id);
+        this.client.emit("statusUpdate", this, this.cache.status, status);
+        this.cache.set("status", status);
+        return status;
     }
     /** @returns The application logs */
     async getLogs() {
-        const data = await this.#apiManager.application('logs', this.id);
-        return data.response.logs;
+        const data = await this.client.api.application("logs", this.id);
+        const { logs } = data.response;
+        this.client.emit("logsUpdate", this, this.cache.logs, logs);
+        this.cache.set("logs", logs);
+        return logs;
     }
     /**
      * Starts up the application
      * @returns `true` for success or `false` for fail
      */
     async start() {
-        const data = await this.#apiManager.application('start', this.id, undefined, 'POST');
-        return data?.code === 'ACTION_SENT';
+        const data = await this.client.api.application("start", this.id, undefined, "POST");
+        return data?.status === "success";
     }
     /**
      * Stops the application
      * @returns `true` for success or `false` for fail
      */
     async stop() {
-        const data = await this.#apiManager.application('stop', this.id, undefined, 'POST');
-        return data?.code === 'ACTION_SENT';
+        const data = await this.client.api.application("stop", this.id, undefined, "POST");
+        return data?.status === "success";
     }
     /**
      * Restarts the application
      * @returns `true` for success or `false` for fail
      */
     async restart() {
-        const data = await this.#apiManager.application('restart', this.id, undefined, 'POST');
-        return data?.code === 'ACTION_SENT';
+        const data = await this.client.api.application("restart", this.id, undefined, "POST");
+        return data?.status === "success";
     }
     /**
      * Deletes your whole application
@@ -3248,8 +3397,8 @@ class Application {
      * @returns `true` for success or `false` for fail
      */
     async delete() {
-        const data = await this.#apiManager.application('delete', this.id, undefined, 'DELETE');
-        return data?.code === 'APP_DELETED';
+        const data = await this.client.api.application("delete", this.id, undefined, "DELETE");
+        return data?.status === "success";
     }
     /**
      * Commit files to your application folder
@@ -3268,27 +3417,131 @@ class Application {
      * @returns `true` for success or `false` for fail
      */
     async commit(file, fileName, restart) {
-        (0, assertions_1.validatePathLike)(file, 'COMMIT_DATA');
+        (0, assertions_1.validatePathLike)(file, "COMMIT_DATA");
         if (fileName) {
-            (0, assertions_1.validateString)(fileName, 'FILE_NAME');
+            (0, assertions_1.validateString)(fileName, "FILE_NAME");
         }
-        if (typeof file === 'string') {
+        if (typeof file === "string") {
             file = await (0, promises_1.readFile)(file);
         }
         const formData = new form_data_1.default();
-        formData.append('file', file, { filename: fileName || 'app.zip' });
-        const data = await this.#apiManager.application(`commit`, this.id, {
+        formData.append("file", file, { filename: fileName || "app.zip" });
+        const data = await this.client.api.application(`commit`, this.id, {
             restart: `${Boolean(restart)}`,
         }, {
-            method: 'POST',
+            method: "POST",
             body: formData.getBuffer(),
             headers: formData.getHeaders(),
         });
-        return data?.code === 'SUCCESS';
+        return data?.status === "success";
+    }
+    isWebsite() {
+        const domain = Reflect.get(this, "domain");
+        return Boolean(domain);
     }
 }
-exports["default"] = Application;
+exports.Application = Application;
 //# sourceMappingURL=application.js.map
+
+/***/ }),
+
+/***/ 9167:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.BaseApplication = void 0;
+const application_1 = __nccwpck_require__(3993);
+const website_1 = __nccwpck_require__(8979);
+/**
+ * Represents the base application from the user endpoint
+ *
+ * @constructor
+ * @param client - The client for this application
+ * @param data - The data from this application
+ */
+class BaseApplication {
+    client;
+    id;
+    tag;
+    description;
+    url;
+    ram;
+    /**
+     * The application programming language
+     *
+     * - `javascript`
+     * - `typescript`
+     * - `python`
+     * - `java`
+     * - `elixir`
+     * - `rust`
+     * - `go`
+     * - `php`
+     */
+    language;
+    cluster;
+    isWebsite;
+    avatar;
+    constructor(client, data) {
+        this.client = client;
+        this.id = data.id;
+        this.tag = data.tag;
+        this.description = data.desc;
+        this.ram = data.ram;
+        this.language = data.lang;
+        this.cluster = data.cluster;
+        this.isWebsite = data.isWebsite;
+        this.avatar = data.avatar;
+        this.url = `https://squarecloud.app/dashboard/app/${data.id}`;
+    }
+    async fetch() {
+        const data = await this.client.api.application("", this.id);
+        if (data.response.isWebsite) {
+            return new website_1.WebsiteApplication(this.client, data.response);
+        }
+        return new application_1.Application(this.client, data.response);
+    }
+}
+exports.BaseApplication = BaseApplication;
+//# sourceMappingURL=base.js.map
+
+/***/ }),
+
+/***/ 8979:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.WebsiteApplication = void 0;
+const managers_1 = __nccwpck_require__(3377);
+const application_1 = __nccwpck_require__(3993);
+/**
+ * Represents a Square Cloud application
+ *
+ * @constructor
+ * @param client - The client for this application
+ * @param data - The data from this application
+ */
+class WebsiteApplication extends application_1.Application {
+    client;
+    /** The application default domain (e.g. example.squareweb.app) */
+    domain;
+    /** The custom configured domain (e.g. yoursite.com) */
+    custom;
+    /** Network manager for this application */
+    network = new managers_1.ApplicationNetworkManager(this);
+    constructor(client, data) {
+        super(client, data);
+        this.client = client;
+        this.domain = data.domain;
+        this.custom = data.custom || undefined;
+    }
+}
+exports.WebsiteApplication = WebsiteApplication;
+//# sourceMappingURL=website.js.map
 
 /***/ }),
 
@@ -3297,10 +3550,12 @@ exports["default"] = Application;
 
 "use strict";
 
+/* eslint-disable @typescript-eslint/no-unsafe-declaration-merging */
 /* eslint-disable no-redeclare */
 /* eslint-disable import/export */
 /* eslint-disable no-use-before-define */
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Collection = void 0;
 /**
  * A Map with additional utility methods. This is used throughout @squarecloud/api rather than Arrays for anything that has
  * an ID, for significantly improved performance and ease-of-use.
@@ -3310,7 +3565,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
  */
 class Collection extends Map {
     first(amount) {
-        if (typeof amount === 'undefined') {
+        if (typeof amount === "undefined") {
             return this.values().next().value;
         }
         if (amount < 0) {
@@ -3321,7 +3576,7 @@ class Collection extends Map {
     }
     last(amount) {
         const arr = [...this.values()];
-        if (typeof amount === 'undefined')
+        if (typeof amount === "undefined")
             return arr[arr.length - 1];
         if (amount < 0)
             return this.first(amount * -1);
@@ -3342,10 +3597,10 @@ class Collection extends Map {
         return this;
     }
     find(fn, thisArg) {
-        if (typeof fn !== 'function') {
+        if (typeof fn !== "function") {
             throw new TypeError(`${fn} is not a function`);
         }
-        if (typeof thisArg !== 'undefined') {
+        if (typeof thisArg !== "undefined") {
             fn = fn.bind(thisArg);
         }
         for (const [key, val] of this) {
@@ -3354,10 +3609,10 @@ class Collection extends Map {
         }
     }
     filter(fn, thisArg) {
-        if (typeof fn !== 'function') {
+        if (typeof fn !== "function") {
             throw new TypeError(`${fn} is not a function`);
         }
-        if (typeof thisArg !== 'undefined') {
+        if (typeof thisArg !== "undefined") {
             fn = fn.bind(thisArg);
         }
         const results = new this.constructor[Symbol.species]();
@@ -3368,10 +3623,10 @@ class Collection extends Map {
         return results;
     }
     map(fn, thisArg) {
-        if (typeof fn !== 'function') {
+        if (typeof fn !== "function") {
             throw new TypeError(`${fn} is not a function`);
         }
-        if (typeof thisArg !== 'undefined') {
+        if (typeof thisArg !== "undefined") {
             fn = fn.bind(thisArg);
         }
         return Array.from({ length: this.size }, () => {
@@ -3380,10 +3635,10 @@ class Collection extends Map {
         });
     }
     some(fn, thisArg) {
-        if (typeof fn !== 'function') {
+        if (typeof fn !== "function") {
             throw new TypeError(`${fn} is not a function`);
         }
-        if (typeof thisArg !== 'undefined') {
+        if (typeof thisArg !== "undefined") {
             fn = fn.bind(thisArg);
         }
         for (const [key, val] of this) {
@@ -3393,10 +3648,10 @@ class Collection extends Map {
         return false;
     }
     every(fn, thisArg) {
-        if (typeof fn !== 'function') {
+        if (typeof fn !== "function") {
             throw new TypeError(`${fn} is not a function`);
         }
-        if (typeof thisArg !== 'undefined') {
+        if (typeof thisArg !== "undefined") {
             fn = fn.bind(thisArg);
         }
         for (const [key, val] of this) {
@@ -3418,11 +3673,11 @@ class Collection extends Map {
      * ```
      */
     reduce(fn, initialValue) {
-        if (typeof fn !== 'function') {
+        if (typeof fn !== "function") {
             throw new TypeError(`${fn} is not a function`);
         }
         let accumulator;
-        if (typeof initialValue !== 'undefined') {
+        if (typeof initialValue !== "undefined") {
             accumulator = initialValue;
             for (const [key, val] of this) {
                 accumulator = fn(accumulator, val, key, this);
@@ -3439,12 +3694,12 @@ class Collection extends Map {
             accumulator = fn(accumulator, val, key, this);
         }
         if (first) {
-            throw new TypeError('Reduce of empty collection with no initial value');
+            throw new TypeError("Reduce of empty collection with no initial value");
         }
         return accumulator;
     }
     each(fn, thisArg) {
-        if (typeof fn !== 'function') {
+        if (typeof fn !== "function") {
             throw new TypeError(`${fn} is not a function`);
         }
         this.forEach(fn, thisArg);
@@ -3465,7 +3720,7 @@ class Collection extends Map {
         return [...this.values()];
     }
 }
-exports["default"] = Collection;
+exports.Collection = Collection;
 //# sourceMappingURL=collection.js.map
 
 /***/ }),
@@ -3476,42 +3731,139 @@ exports["default"] = Collection;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.SquareCloudAPIError = void 0;
 class SquareCloudAPIError extends TypeError {
     constructor(code, message) {
         super(code);
-        this.name = 'SquareCloudAPIError';
+        this.name = "SquareCloudAPIError";
         this.message =
             code
-                .replaceAll('_', ' ')
+                .replaceAll("_", " ")
                 .toLowerCase()
-                .replace(/(^|\s)\S/g, (L) => L.toUpperCase()) +
-                (message ? `: ${message}` : '');
+                .replace(/(^|\s)\S/g, (L) => L.toUpperCase()) + (message ? `: ${message}` : "");
     }
 }
-exports["default"] = SquareCloudAPIError;
+exports.SquareCloudAPIError = SquareCloudAPIError;
 //# sourceMappingURL=error.js.map
 
 /***/ }),
 
-/***/ 6657:
+/***/ 7546:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
-/* eslint-disable no-redeclare */
-/* eslint-disable import/export */
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.FullUser = void 0;
-const application_1 = __importDefault(__nccwpck_require__(9959));
-const collection_1 = __importDefault(__nccwpck_require__(9482));
+__exportStar(__nccwpck_require__(3993), exports);
+__exportStar(__nccwpck_require__(8979), exports);
+__exportStar(__nccwpck_require__(9167), exports);
+__exportStar(__nccwpck_require__(9482), exports);
+__exportStar(__nccwpck_require__(2949), exports);
+__exportStar(__nccwpck_require__(4895), exports);
+__exportStar(__nccwpck_require__(6657), exports);
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 4895:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ApplicationStatus = exports.SimpleApplicationStatus = void 0;
+class SimpleApplicationStatus {
+    client;
+    /** The application's ID this status came from */
+    applicationId;
+    /** Usage statuses for this application */
+    usage;
+    /** Whether the application is running or not */
+    running;
+    constructor(client, data) {
+        this.client = client;
+        this.applicationId = data.id;
+        this.usage = {
+            cpu: data.cpu,
+            ram: data.ram,
+        };
+        this.running = data.running;
+    }
+    async fetch() {
+        const data = await this.client.api.application("status", this.applicationId);
+        return new ApplicationStatus(this.client, data.response, this.applicationId);
+    }
+}
+exports.SimpleApplicationStatus = SimpleApplicationStatus;
+class ApplicationStatus extends SimpleApplicationStatus {
+    client;
+    /**
+     * The status of the application
+     *
+     * - 'exited' (stopped)
+     * - 'created' (being created)
+     * - 'running'
+     * - 'starting'
+     * - 'restarting'
+     * - 'deleting'
+     */
+    status;
+    /** How many requests have been made since the last start up */
+    requests;
+    /** For how long the app is running in millisseconds */
+    uptimeTimestamp;
+    /** For how long the app is running */
+    uptime;
+    constructor(client, data, applicationId) {
+        super(client, {
+            id: applicationId,
+            ...data,
+        });
+        this.client = client;
+        this.usage = {
+            cpu: data.cpu,
+            ram: data.ram,
+            network: data.network,
+            storage: data.storage,
+        };
+        this.status = data.status;
+        this.requests = data.requests;
+        this.uptime = data.uptime ? new Date(data.uptime) : undefined;
+        this.uptimeTimestamp = data.uptime ?? undefined;
+    }
+}
+exports.ApplicationStatus = ApplicationStatus;
+//# sourceMappingURL=status.js.map
+
+/***/ }),
+
+/***/ 6657:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.User = void 0;
+const __1 = __nccwpck_require__(7061);
 /**
  * Represents a Square Cloud user
  *
  * @constructor
- * @param apiManager - The APIManager for this user
+ * @param client - The client for this user
  * @param data - The data from this user
  */
 class User {
@@ -3523,56 +3875,94 @@ class User {
     locale;
     /** The user's current plan */
     plan;
-    /** Whether the user is blocked for Square Cloud services or not */
-    blocklist;
-    constructor(data) {
-        this.id = data.user.id;
-        this.tag = data.user.tag;
-        this.locale = data.user.locale;
-        this.blocklist = data.user.blocklist;
-        this.plan = {
-            ...data.user.plan,
-            duration: data.user.plan.duration.formatted,
-            expiresTimestamp: data.user.plan.duration.raw,
-            expires: data.user.plan.duration.raw
-                ? new Date(data.user.plan.duration.raw)
-                : undefined,
-        };
-    }
-    /** Whether you have access to private information or not */
-    hasAccess() {
-        const email = Reflect.get(this, 'email');
-        return email && email !== 'Access denied';
-    }
-}
-exports["default"] = User;
-/**
- * Represents a Square Cloud user
- *
- * @constructor
- * @param apiManager - The APIManager for this user
- * @param data - The data from this user
- */
-class FullUser extends User {
     /** The user's registered email */
     email;
     /** The user's registered applications Collection */
     applications;
-    constructor(apiManager, data) {
-        super(data);
+    constructor(client, data) {
+        this.id = data.user.id;
+        this.tag = data.user.tag;
+        this.locale = data.user.locale;
+        this.plan = {
+            ...data.user.plan,
+            expiresInTimestamp: data.user.plan.duration ?? undefined,
+            expiresIn: data.user.plan.duration ? new Date(data.user.plan.duration) : undefined,
+        };
         this.email = data.user.email;
-        this.applications = new collection_1.default(data.applications.map((app) => [
-            app.id,
-            new application_1.default(apiManager, app),
-        ]));
+        this.applications = new __1.Collection(data.applications.map((app) => [app.id, new __1.BaseApplication(client, app)]));
     }
 }
-exports.FullUser = FullUser;
+exports.User = User;
 //# sourceMappingURL=user.js.map
 
 /***/ }),
 
-/***/ 6761:
+/***/ 151:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+//# sourceMappingURL=api.js.map
+
+/***/ }),
+
+/***/ 7785:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.TypedEventEmitter = void 0;
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const events_1 = __importDefault(__nccwpck_require__(2361));
+class TypedEventEmitter {
+    emitter = new events_1.default();
+    emit(eventName, ...eventArg) {
+        this.emitter.emit(eventName, ...eventArg);
+    }
+    on(eventName, handler) {
+        this.emitter.on(eventName, handler);
+    }
+    off(eventName, handler) {
+        this.emitter.off(eventName, handler);
+    }
+}
+exports.TypedEventEmitter = TypedEventEmitter;
+//# sourceMappingURL=client.js.map
+
+/***/ }),
+
+/***/ 4968:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+__exportStar(__nccwpck_require__(151), exports);
+__exportStar(__nccwpck_require__(7785), exports);
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 6881:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 const Utils = __nccwpck_require__(5182);
@@ -9169,11 +9559,11 @@ const IS_WINDOWS_PLATFORM = os.platform() === 'win32';
 const LEADING_DOT_SEGMENT_CHARACTERS_COUNT = 2; // ./ or .\\
 /**
  * All non-escaped special characters.
- * Posix: ()*?[\]{|}, !+@ before (, ! at the beginning, \\ before non-special characters.
- * Windows: (){}, !+@ before (, ! at the beginning.
+ * Posix: ()*?[]{|}, !+@ before (, ! at the beginning, \\ before non-special characters.
+ * Windows: (){}[], !+@ before (, ! at the beginning.
  */
 const POSIX_UNESCAPED_GLOB_SYMBOLS_RE = /(\\?)([()*?[\]{|}]|^!|[!+@](?=\()|\\(?![!()*+?@[\]{|}]))/g;
-const WINDOWS_UNESCAPED_GLOB_SYMBOLS_RE = /(\\?)([(){}]|^!|[!+@](?=\())/g;
+const WINDOWS_UNESCAPED_GLOB_SYMBOLS_RE = /(\\?)([()[\]{}]|^!|[!+@](?=\())/g;
 /**
  * The device path (\\.\ or \\?\).
  * https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats#dos-device-paths
@@ -9184,7 +9574,7 @@ const DOS_DEVICE_PATH_RE = /^\\\\([.?])/;
  * Windows: !()+@{}
  * https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#naming-conventions
  */
-const WINDOWS_BACKSLASHES_RE = /\\(?![!()+@{}])/g;
+const WINDOWS_BACKSLASHES_RE = /\\(?![!()+@[\]{}])/g;
 /**
  * Designed to work only with simple paths: `dir\\file`.
  */
@@ -9372,7 +9762,7 @@ function expandPatternsWithBraceExpansion(patterns) {
 }
 exports.expandPatternsWithBraceExpansion = expandPatternsWithBraceExpansion;
 function expandBraceExpansion(pattern) {
-    const patterns = micromatch.braces(pattern, { expand: true, nodupes: true });
+    const patterns = micromatch.braces(pattern, { expand: true, nodupes: true, keepEscaping: true });
     /**
      * Sort the patterns by length so that the same depth patterns are processed side by side.
      * `a/{b,}/{c,}/*` – `['a///*', 'a/b//*', 'a//c/*', 'a/b/c/*']`
@@ -15151,6 +15541,7 @@ class ZodError extends Error {
         };
         const actualProto = new.target.prototype;
         if (Object.setPrototypeOf) {
+            // eslint-disable-next-line ban/ban
             Object.setPrototypeOf(this, actualProto);
         }
         else {
@@ -15190,6 +15581,13 @@ class ZodError extends Error {
                         const terminal = i === issue.path.length - 1;
                         if (!terminal) {
                             curr[el] = curr[el] || { _errors: [] };
+                            // if (typeof el === "string") {
+                            //   curr[el] = curr[el] || { _errors: [] };
+                            // } else if (typeof el === "number") {
+                            //   const errorArray: any = [];
+                            //   errorArray._errors = [];
+                            //   curr[el] = curr[el] || errorArray;
+                            // }
                         }
                         else {
                             curr[el] = curr[el] || { _errors: [] };
@@ -15351,7 +15749,7 @@ function addIssueToContext(ctx, issueData) {
             ctx.common.contextualErrorMap,
             ctx.schemaErrorMap,
             (0, errors_1.getErrorMap)(),
-            en_1.default,
+            en_1.default, // then global default map
         ].filter((x) => !!x),
     });
     ctx.common.issues.push(issue);
@@ -15476,8 +15874,8 @@ var util;
             return obj[e];
         });
     };
-    util.objectKeys = typeof Object.keys === "function"
-        ? (obj) => Object.keys(obj)
+    util.objectKeys = typeof Object.keys === "function" // eslint-disable-line ban/ban
+        ? (obj) => Object.keys(obj) // eslint-disable-line ban/ban
         : (object) => {
             const keys = [];
             for (const key in object) {
@@ -15495,7 +15893,7 @@ var util;
         return undefined;
     };
     util.isInteger = typeof Number.isInteger === "function"
-        ? (val) => Number.isInteger(val)
+        ? (val) => Number.isInteger(val) // eslint-disable-line ban/ban
         : (val) => typeof val === "number" && isFinite(val) && Math.floor(val) === val;
     function joinValues(array, separator = " | ") {
         return array
@@ -15515,7 +15913,7 @@ var objectUtil;
     objectUtil.mergeShapes = (first, second) => {
         return {
             ...first,
-            ...second,
+            ...second, // second overwrites first
         };
     };
 })(objectUtil = exports.objectUtil || (exports.objectUtil = {}));
@@ -15838,6 +16236,7 @@ function processCreateParams(params) {
 }
 class ZodType {
     constructor(def) {
+        /** Alias of safeParseAsync */
         this.spa = this.safeParseAsync;
         this._def = def;
         this.parse = this.parse.bind(this);
@@ -16093,12 +16492,31 @@ exports.Schema = ZodType;
 exports.ZodSchema = ZodType;
 const cuidRegex = /^c[^\s-]{8,}$/i;
 const cuid2Regex = /^[a-z][a-z0-9]*$/;
-const ulidRegex = /[0-9A-HJKMNP-TV-Z]{26}/;
+const ulidRegex = /^[0-9A-HJKMNP-TV-Z]{26}$/;
+// const uuidRegex =
+//   /^([a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[a-f0-9]{4}-[a-f0-9]{12}|00000000-0000-0000-0000-000000000000)$/i;
 const uuidRegex = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/i;
-const emailRegex = /^([A-Z0-9_+-]+\.?)*[A-Z0-9_+-]@([A-Z0-9][A-Z0-9\-]*\.)+[A-Z]{2,}$/i;
-const emojiRegex = /^(\p{Extended_Pictographic}|\p{Emoji_Component})+$/u;
+// from https://stackoverflow.com/a/46181/1550155
+// old version: too slow, didn't support unicode
+// const emailRegex = /^((([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+(\.([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+)*)|((\x22)((((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(([\x01-\x08\x0b\x0c\x0e-\x1f\x7f]|\x21|[\x23-\x5b]|[\x5d-\x7e]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(\\([\x01-\x09\x0b\x0c\x0d-\x7f]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))))*(((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(\x22)))@((([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.)+(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))$/i;
+//old email regex
+// const emailRegex = /^(([^<>()[\].,;:\s@"]+(\.[^<>()[\].,;:\s@"]+)*)|(".+"))@((?!-)([^<>()[\].,;:\s@"]+\.)+[^<>()[\].,;:\s@"]{1,})[^-<>()[\].,;:\s@"]$/i;
+// eslint-disable-next-line
+// const emailRegex =
+//   /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[(((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))\.){3}((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))\])|(\[IPv6:(([a-f0-9]{1,4}:){7}|::([a-f0-9]{1,4}:){0,6}|([a-f0-9]{1,4}:){1}:([a-f0-9]{1,4}:){0,5}|([a-f0-9]{1,4}:){2}:([a-f0-9]{1,4}:){0,4}|([a-f0-9]{1,4}:){3}:([a-f0-9]{1,4}:){0,3}|([a-f0-9]{1,4}:){4}:([a-f0-9]{1,4}:){0,2}|([a-f0-9]{1,4}:){5}:([a-f0-9]{1,4}:){0,1})([a-f0-9]{1,4}|(((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))\.){3}((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2})))\])|([A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])*(\.[A-Za-z]{2,})+))$/;
+// const emailRegex =
+//   /^[a-zA-Z0-9\.\!\#\$\%\&\'\*\+\/\=\?\^\_\`\{\|\}\~\-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+// const emailRegex =
+//   /^(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$/i;
+const emailRegex = /^(?!\.)(?!.*\.\.)([A-Z0-9_+-\.]*)[A-Z0-9_+-]@([A-Z0-9][A-Z0-9\-]*\.)+[A-Z]{2,}$/i;
+// const emailRegex =
+//   /^[a-z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-z0-9-]+(?:\.[a-z0-9\-]+)*$/i;
+// from https://thekevinscott.com/emojis-in-javascript/#writing-a-regular-expression
+const _emojiRegex = `^(\\p{Extended_Pictographic}|\\p{Emoji_Component})+$`;
+let emojiRegex;
 const ipv4Regex = /^(((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))\.){3}((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))$/;
 const ipv6Regex = /^(([a-f0-9]{1,4}:){7}|::([a-f0-9]{1,4}:){0,6}|([a-f0-9]{1,4}:){1}:([a-f0-9]{1,4}:){0,5}|([a-f0-9]{1,4}:){2}:([a-f0-9]{1,4}:){0,4}|([a-f0-9]{1,4}:){3}:([a-f0-9]{1,4}:){0,3}|([a-f0-9]{1,4}:){4}:([a-f0-9]{1,4}:){0,2}|([a-f0-9]{1,4}:){5}:([a-f0-9]{1,4}:){0,1})([a-f0-9]{1,4}|(((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))\.){3}((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2})))$/;
+// Adapted from https://stackoverflow.com/a/3143231
 const datetimeRegex = (args) => {
     if (args.precision) {
         if (args.offset) {
@@ -16135,27 +16553,6 @@ function isValidIP(ip, version) {
     return false;
 }
 class ZodString extends ZodType {
-    constructor() {
-        super(...arguments);
-        this._regex = (regex, validation, message) => this.refinement((data) => regex.test(data), {
-            validation,
-            code: ZodError_1.ZodIssueCode.invalid_string,
-            ...errorUtil_1.errorUtil.errToObj(message),
-        });
-        this.nonempty = (message) => this.min(1, errorUtil_1.errorUtil.errToObj(message));
-        this.trim = () => new ZodString({
-            ...this._def,
-            checks: [...this._def.checks, { kind: "trim" }],
-        });
-        this.toLowerCase = () => new ZodString({
-            ...this._def,
-            checks: [...this._def.checks, { kind: "toLowerCase" }],
-        });
-        this.toUpperCase = () => new ZodString({
-            ...this._def,
-            checks: [...this._def.checks, { kind: "toUpperCase" }],
-        });
-    }
     _parse(input) {
         if (this._def.coerce) {
             input.data = String(input.data);
@@ -16167,7 +16564,9 @@ class ZodString extends ZodType {
                 code: ZodError_1.ZodIssueCode.invalid_type,
                 expected: util_1.ZodParsedType.string,
                 received: ctx.parsedType,
-            });
+            }
+            //
+            );
             return parseUtil_1.INVALID;
         }
         const status = new parseUtil_1.ParseStatus();
@@ -16241,6 +16640,9 @@ class ZodString extends ZodType {
                 }
             }
             else if (check.kind === "emoji") {
+                if (!emojiRegex) {
+                    emojiRegex = new RegExp(_emojiRegex, "u");
+                }
                 if (!emojiRegex.test(input.data)) {
                     ctx = this._getOrReturnCtx(input, ctx);
                     (0, parseUtil_1.addIssueToContext)(ctx, {
@@ -16393,6 +16795,13 @@ class ZodString extends ZodType {
         }
         return { status: status.value, value: input.data };
     }
+    _regex(regex, validation, message) {
+        return this.refinement((data) => regex.test(data), {
+            validation,
+            code: ZodError_1.ZodIssueCode.invalid_string,
+            ...errorUtil_1.errorUtil.errToObj(message),
+        });
+    }
     _addCheck(check) {
         return new ZodString({
             ...this._def,
@@ -16490,6 +16899,31 @@ class ZodString extends ZodType {
             ...errorUtil_1.errorUtil.errToObj(message),
         });
     }
+    /**
+     * @deprecated Use z.string().min(1) instead.
+     * @see {@link ZodString.min}
+     */
+    nonempty(message) {
+        return this.min(1, errorUtil_1.errorUtil.errToObj(message));
+    }
+    trim() {
+        return new ZodString({
+            ...this._def,
+            checks: [...this._def.checks, { kind: "trim" }],
+        });
+    }
+    toLowerCase() {
+        return new ZodString({
+            ...this._def,
+            checks: [...this._def.checks, { kind: "toLowerCase" }],
+        });
+    }
+    toUpperCase() {
+        return new ZodString({
+            ...this._def,
+            checks: [...this._def.checks, { kind: "toUpperCase" }],
+        });
+    }
     get isDatetime() {
         return !!this._def.checks.find((ch) => ch.kind === "datetime");
     }
@@ -16548,6 +16982,7 @@ ZodString.create = (params) => {
         ...processCreateParams(params),
     });
 };
+// https://stackoverflow.com/questions/3966484/why-does-modulus-operator-return-fractional-number-in-javascript/31711034#31711034
 function floatSafeRemainder(val, step) {
     const valDecCount = (val.toString().split(".")[1] || "").length;
     const stepDecCount = (step.toString().split(".")[1] || "").length;
@@ -17183,6 +17618,7 @@ ZodNull.create = (params) => {
 class ZodAny extends ZodType {
     constructor() {
         super(...arguments);
+        // to prevent instances of other classes from extending ZodAny. this causes issues with catchall in ZodObject.
         this._any = true;
     }
     _parse(input) {
@@ -17199,6 +17635,7 @@ ZodAny.create = (params) => {
 class ZodUnknown extends ZodType {
     constructor() {
         super(...arguments);
+        // required
         this._unknown = true;
     }
     _parse(input) {
@@ -17389,7 +17826,47 @@ class ZodObject extends ZodType {
     constructor() {
         super(...arguments);
         this._cached = null;
+        /**
+         * @deprecated In most cases, this is no longer needed - unknown properties are now silently stripped.
+         * If you want to pass through unknown properties, use `.passthrough()` instead.
+         */
         this.nonstrict = this.passthrough;
+        // extend<
+        //   Augmentation extends ZodRawShape,
+        //   NewOutput extends util.flatten<{
+        //     [k in keyof Augmentation | keyof Output]: k extends keyof Augmentation
+        //       ? Augmentation[k]["_output"]
+        //       : k extends keyof Output
+        //       ? Output[k]
+        //       : never;
+        //   }>,
+        //   NewInput extends util.flatten<{
+        //     [k in keyof Augmentation | keyof Input]: k extends keyof Augmentation
+        //       ? Augmentation[k]["_input"]
+        //       : k extends keyof Input
+        //       ? Input[k]
+        //       : never;
+        //   }>
+        // >(
+        //   augmentation: Augmentation
+        // ): ZodObject<
+        //   extendShape<T, Augmentation>,
+        //   UnknownKeys,
+        //   Catchall,
+        //   NewOutput,
+        //   NewInput
+        // > {
+        //   return new ZodObject({
+        //     ...this._def,
+        //     shape: () => ({
+        //       ...this._def.shape(),
+        //       ...augmentation,
+        //     }),
+        //   }) as any;
+        // }
+        /**
+         * @deprecated Use `.extend` instead
+         *  */
         this.augment = this.extend;
     }
     _getCached() {
@@ -17457,12 +17934,14 @@ class ZodObject extends ZodType {
             }
         }
         else {
+            // run catchall validation
             const catchall = this._def.catchall;
             for (const key of extraKeys) {
                 const value = ctx.data[key];
                 pairs.push({
                     key: { status: "valid", value: key },
-                    value: catchall._parse(new ParseInputLazyPath(ctx, value, ctx.path, key)),
+                    value: catchall._parse(new ParseInputLazyPath(ctx, value, ctx.path, key) //, ctx.child(key), value, getParsedType(value)
+                    ),
                     alwaysSet: key in ctx.data,
                 });
             }
@@ -17526,6 +18005,23 @@ class ZodObject extends ZodType {
             unknownKeys: "passthrough",
         });
     }
+    // const AugmentFactory =
+    //   <Def extends ZodObjectDef>(def: Def) =>
+    //   <Augmentation extends ZodRawShape>(
+    //     augmentation: Augmentation
+    //   ): ZodObject<
+    //     extendShape<ReturnType<Def["shape"]>, Augmentation>,
+    //     Def["unknownKeys"],
+    //     Def["catchall"]
+    //   > => {
+    //     return new ZodObject({
+    //       ...def,
+    //       shape: () => ({
+    //         ...def.shape(),
+    //         ...augmentation,
+    //       }),
+    //     }) as any;
+    //   };
     extend(augmentation) {
         return new ZodObject({
             ...this._def,
@@ -17535,6 +18031,11 @@ class ZodObject extends ZodType {
             }),
         });
     }
+    /**
+     * Prior to zod@1.0.12 there was a bug in the
+     * inferred type of merged objects. Please
+     * upgrade if you are experiencing issues.
+     */
     merge(merging) {
         const merged = new ZodObject({
             unknownKeys: merging._def.unknownKeys,
@@ -17547,9 +18048,65 @@ class ZodObject extends ZodType {
         });
         return merged;
     }
+    // merge<
+    //   Incoming extends AnyZodObject,
+    //   Augmentation extends Incoming["shape"],
+    //   NewOutput extends {
+    //     [k in keyof Augmentation | keyof Output]: k extends keyof Augmentation
+    //       ? Augmentation[k]["_output"]
+    //       : k extends keyof Output
+    //       ? Output[k]
+    //       : never;
+    //   },
+    //   NewInput extends {
+    //     [k in keyof Augmentation | keyof Input]: k extends keyof Augmentation
+    //       ? Augmentation[k]["_input"]
+    //       : k extends keyof Input
+    //       ? Input[k]
+    //       : never;
+    //   }
+    // >(
+    //   merging: Incoming
+    // ): ZodObject<
+    //   extendShape<T, ReturnType<Incoming["_def"]["shape"]>>,
+    //   Incoming["_def"]["unknownKeys"],
+    //   Incoming["_def"]["catchall"],
+    //   NewOutput,
+    //   NewInput
+    // > {
+    //   const merged: any = new ZodObject({
+    //     unknownKeys: merging._def.unknownKeys,
+    //     catchall: merging._def.catchall,
+    //     shape: () =>
+    //       objectUtil.mergeShapes(this._def.shape(), merging._def.shape()),
+    //     typeName: ZodFirstPartyTypeKind.ZodObject,
+    //   }) as any;
+    //   return merged;
+    // }
     setKey(key, schema) {
         return this.augment({ [key]: schema });
     }
+    // merge<Incoming extends AnyZodObject>(
+    //   merging: Incoming
+    // ): //ZodObject<T & Incoming["_shape"], UnknownKeys, Catchall> = (merging) => {
+    // ZodObject<
+    //   extendShape<T, ReturnType<Incoming["_def"]["shape"]>>,
+    //   Incoming["_def"]["unknownKeys"],
+    //   Incoming["_def"]["catchall"]
+    // > {
+    //   // const mergedShape = objectUtil.mergeShapes(
+    //   //   this._def.shape(),
+    //   //   merging._def.shape()
+    //   // );
+    //   const merged: any = new ZodObject({
+    //     unknownKeys: merging._def.unknownKeys,
+    //     catchall: merging._def.catchall,
+    //     shape: () =>
+    //       objectUtil.mergeShapes(this._def.shape(), merging._def.shape()),
+    //     typeName: ZodFirstPartyTypeKind.ZodObject,
+    //   }) as any;
+    //   return merged;
+    // }
     catchall(index) {
         return new ZodObject({
             ...this._def,
@@ -17580,6 +18137,9 @@ class ZodObject extends ZodType {
             shape: () => shape,
         });
     }
+    /**
+     * @deprecated
+     */
     deepPartial() {
         return deepPartialify(this);
     }
@@ -17656,6 +18216,7 @@ class ZodUnion extends ZodType {
         const { ctx } = this._processInputParams(input);
         const options = this._def.options;
         function handleResults(results) {
+            // return first issue-free validation if it exists
             for (const result of results) {
                 if (result.result.status === "valid") {
                     return result.result;
@@ -17663,10 +18224,12 @@ class ZodUnion extends ZodType {
             }
             for (const result of results) {
                 if (result.result.status === "dirty") {
+                    // add issues from dirty option
                     ctx.common.issues.push(...result.ctx.common.issues);
                     return result.result;
                 }
             }
+            // return invalid
             const unionErrors = results.map((result) => new ZodError_1.ZodError(result.ctx.common.issues));
             (0, parseUtil_1.addIssueToContext)(ctx, {
                 code: ZodError_1.ZodIssueCode.invalid_union,
@@ -17745,6 +18308,13 @@ ZodUnion.create = (types, params) => {
         ...processCreateParams(params),
     });
 };
+/////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
+//////////                                 //////////
+//////////      ZodDiscriminatedUnion      //////////
+//////////                                 //////////
+/////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
 const getDiscriminator = (type) => {
     if (type instanceof ZodLazy) {
         return getDiscriminator(type.schema);
@@ -17759,6 +18329,7 @@ const getDiscriminator = (type) => {
         return type.options;
     }
     else if (type instanceof ZodNativeEnum) {
+        // eslint-disable-next-line ban/ban
         return Object.keys(type.enum);
     }
     else if (type instanceof ZodDefault) {
@@ -17820,8 +18391,18 @@ class ZodDiscriminatedUnion extends ZodType {
     get optionsMap() {
         return this._def.optionsMap;
     }
+    /**
+     * The constructor of the discriminated union schema. Its behaviour is very similar to that of the normal z.union() constructor.
+     * However, it only allows a union of objects, all of which need to share a discriminator property. This property must
+     * have a different value for each object in the union.
+     * @param discriminator the name of the discriminator property
+     * @param types an array of object schemas
+     * @param params
+     */
     static create(discriminator, options, params) {
+        // Get all the valid discriminator values
         const optionsMap = new Map();
+        // try {
         for (const type of options) {
             const discriminatorValues = getDiscriminator(type.shape[discriminator]);
             if (!discriminatorValues) {
@@ -17984,7 +18565,7 @@ class ZodTuple extends ZodType {
                 return null;
             return schema._parse(new ParseInputLazyPath(ctx, item, ctx.path, itemIndex));
         })
-            .filter((x) => !!x);
+            .filter((x) => !!x); // filter nulls
         if (ctx.common.async) {
             return Promise.all(items).then((results) => {
                 return parseUtil_1.ParseStatus.mergeArray(status, results);
@@ -18275,6 +18856,9 @@ class ZodFunction extends ZodType {
         const params = { errorMap: ctx.common.contextualErrorMap };
         const fn = ctx.data;
         if (this._def.returns instanceof ZodPromise) {
+            // Would love a way to avoid disabling this rule, but we need
+            // an alias (using an arrow function was what caused 2651).
+            // eslint-disable-next-line @typescript-eslint/no-this-alias
             const me = this;
             return (0, parseUtil_1.OK)(async function (...args) {
                 const error = new ZodError_1.ZodError([]);
@@ -18295,6 +18879,9 @@ class ZodFunction extends ZodType {
             });
         }
         else {
+            // Would love a way to avoid disabling this rule, but we need
+            // an alias (using an arrow function was what caused 2651).
+            // eslint-disable-next-line @typescript-eslint/no-this-alias
             const me = this;
             return (0, parseUtil_1.OK)(function (...args) {
                 const parsedArgs = me._def.args.safeParse(args, params);
@@ -18579,7 +19166,9 @@ class ZodEffects extends ZodType {
             }
         }
         if (effect.type === "refinement") {
-            const executeRefinement = (acc) => {
+            const executeRefinement = (acc
+            // effect: RefinementEffect<any>
+            ) => {
                 const result = effect.refinement(acc, checkCtx);
                 if (ctx.common.async) {
                     return Promise.resolve(result);
@@ -18599,6 +19188,7 @@ class ZodEffects extends ZodType {
                     return parseUtil_1.INVALID;
                 if (inner.status === "dirty")
                     status.dirty();
+                // return value is ignored
                 executeRefinement(inner.value);
                 return { status: status.value, value: inner.value };
             }
@@ -18733,6 +19323,7 @@ ZodDefault.create = (type, params) => {
 class ZodCatch extends ZodType {
     _parse(input) {
         const { ctx } = this._processInputParams(input);
+        // newCtx is used to not collect issues from inner types in ctx
         const newCtx = {
             ...ctx,
             common: {
@@ -18903,7 +19494,18 @@ ZodReadonly.create = (type, params) => {
         ...processCreateParams(params),
     });
 };
-const custom = (check, params = {}, fatal) => {
+const custom = (check, params = {}, 
+/**
+ * @deprecated
+ *
+ * Pass `fatal` into the params object instead:
+ *
+ * ```ts
+ * z.string().custom((val) => val.length > 5, { fatal: false })
+ * ```
+ *
+ */
+fatal) => {
     if (check)
         return ZodAny.create().superRefine((data, ctx) => {
             var _a, _b;
@@ -18963,10 +19565,13 @@ var ZodFirstPartyTypeKind;
     ZodFirstPartyTypeKind["ZodPipeline"] = "ZodPipeline";
     ZodFirstPartyTypeKind["ZodReadonly"] = "ZodReadonly";
 })(ZodFirstPartyTypeKind = exports.ZodFirstPartyTypeKind || (exports.ZodFirstPartyTypeKind = {}));
+// requires TS 4.4+
 class Class {
     constructor(..._) { }
 }
-const instanceOfType = (cls, params = {
+const instanceOfType = (
+// const instanceOfType = <T extends new (...args: any[]) => any>(
+cls, params = {
     message: `Input not instance of ${cls.name}`,
 }) => (0, exports.custom)((data) => data instanceof cls, params);
 exports["instanceof"] = instanceOfType;
@@ -19088,12 +19693,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
-const form_data_1 = __importDefault(__nccwpck_require__(4334));
 const api_1 = __nccwpck_require__(7061);
 const zip_1 = __nccwpck_require__(3387);
 async function run() {
@@ -19101,11 +19702,9 @@ async function run() {
         const token = core.getInput("token", { required: true });
         const id = core.getInput("application_id", { required: true });
         const restart = core.getBooleanInput("restart");
-        const exclusionsString = core.getInput("exclusions");
-        const exclusions = exclusionsString.trim() == "" ? [] : exclusionsString.trim().split(" ");
-        const buffer = (0, zip_1.zipProject)(exclusions);
-        const formadata = new form_data_1.default();
-        formadata.append("file", buffer, { filename: "application.zip" });
+        const excludesString = core.getInput("excludes");
+        const excludes = excludesString.trim() == "" ? [] : excludesString.trim().split(" ");
+        const buffer = (0, zip_1.zipProject)(excludes);
         const api = new api_1.SquareCloudAPI(token);
         const application = await api.applications.get(id);
         core.debug(`Application: ${JSON.stringify(application)}`);
@@ -19137,13 +19736,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.zipProject = void 0;
-const adm_zip_1 = __importDefault(__nccwpck_require__(6761));
+const adm_zip_1 = __importDefault(__nccwpck_require__(6881));
 const fast_glob_1 = __importDefault(__nccwpck_require__(3664));
 const fs_1 = __nccwpck_require__(7147);
 const path_1 = __nccwpck_require__(1017);
-const defaultExclusions = [".git"];
+const defaultExcludes = [".git"];
 function zipProject(excludes = []) {
-    let files = fast_glob_1.default.sync("**", { ignore: [...defaultExclusions, ...excludes] });
+    let files = fast_glob_1.default.sync("**", { ignore: [...defaultExcludes, ...excludes] });
     let zip = new adm_zip_1.default();
     files.forEach((file) => zip.addFile(file, (0, fs_1.readFileSync)((0, path_1.resolve)(file))));
     return zip.toBuffer();
