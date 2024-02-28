@@ -4,7 +4,7 @@
   "private": true,
   "description": "Deploy your applications to SquareCloud using Github Actions",
   "keywords": [],
-  "author": "richaardev <me@richaar.dev> & joaotonaco",
+  "author": "richaardev <me@richaar.dev>",
   "license": "MIT",
   "engines": {
     "node": ">=20"
