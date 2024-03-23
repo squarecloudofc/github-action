@@ -32699,11 +32699,11 @@ function wrappy (fn, cb) {
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.install = void 0;
-const rest_1 = __nccwpck_require__(5375);
-const core_1 = __nccwpck_require__(2186);
 const tool_cache_1 = __nccwpck_require__(7784);
-const context_1 = __nccwpck_require__(8954);
+const core_1 = __nccwpck_require__(2186);
+const rest_1 = __nccwpck_require__(5375);
 const posix_1 = __nccwpck_require__(984);
+const context_1 = __nccwpck_require__(8954);
 async function install() {
     const currentArch = (0, context_1.getArch)();
     const currentPlatform = (0, context_1.getPlatform)();
@@ -32765,19 +32765,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getArch = exports.getPlatform = exports.getInputs = void 0;
 const core = __importStar(__nccwpck_require__(2186));
-const os_1 = __importDefault(__nccwpck_require__(2037));
+const node_os_1 = __importDefault(__nccwpck_require__(612));
 function getInputs() {
     return {
         token: core.getInput("token", { required: true }),
         command: core.getInput("command", { required: true }),
-        cwd: core.getInput("cwd") || ".",
+        workdir: core.getInput("cwd") || ".",
     };
 }
 exports.getInputs = getInputs;
 const supportedPlatforms = ["linux", "darwin", "win32"];
 const supportedArchs = ["amd64", "arm"];
 function getPlatform() {
-    const platform = os_1.default.platform();
+    const platform = node_os_1.default.platform();
     if (!supportedPlatforms.includes(platform)) {
         throw new Error(`Unsupported platform: ${platform}`);
     }
@@ -32785,7 +32785,7 @@ function getPlatform() {
 }
 exports.getPlatform = getPlatform;
 function getArch() {
-    const arch = os_1.default.arch();
+    const arch = node_os_1.default.arch();
     if (!supportedArchs.includes(arch)) {
         throw new Error(`Unsupported architecture: ${arch}`);
     }
@@ -32834,7 +32834,7 @@ const context_1 = __nccwpck_require__(8954);
 const cli_1 = __nccwpck_require__(6733);
 async function run() {
     try {
-        const { cwd, command, token } = (0, context_1.getInputs)();
+        const { workdir: cwd, command, token } = (0, context_1.getInputs)();
         const cliBinary = await (0, cli_1.install)();
         core.info(`CLI Installed successfully`);
         if (cwd && cwd != ".") {
@@ -32964,6 +32964,14 @@ module.exports = require("net");
 
 "use strict";
 module.exports = require("node:events");
+
+/***/ }),
+
+/***/ 612:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:os");
 
 /***/ }),
 
