@@ -8,14 +8,14 @@ branding:
 inputs:
   token:
     required: true
-    description: 'Square Cloud api token'
+    description: 'Square Cloud API token'
   command:
     required: true
-    description: 'Command you want to execute'
-  cwd:
+    description: 'Arguments to pass to Square Cloud CLI'
+  workdir:
     required: false
     default: "."
-    description: 'Command you want to execute'
+    description: 'Working Directory'
 
 runs:
   using: 'node20'

@@ -4,14 +4,14 @@ import os from "node:os";
 export interface ActionInputs {
   token: string;
   command: string;
-  cwd: string;
+  workdir: string;
 }
 
 export function getInputs(): ActionInputs {
   return {
     token: core.getInput("token", { required: true }),
     command: core.getInput("command", { required: true }),
-    cwd: core.getInput("cwd") || ".",
+    workdir: core.getInput("cwd") || ".",
   }
 }
 

@@ -6,7 +6,7 @@ import { install } from "./cli";
 
 async function run(): Promise<void> {
   try {
-    const { cwd, command, token } = getInputs()
+    const { workdir: cwd, command, token } = getInputs()
 
     const cliBinary = await install()
     core.info(`CLI Installed successfully`)
