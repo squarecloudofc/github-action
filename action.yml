@@ -1,4 +1,4 @@
-name: 'Square Cloud Easy Action'
+name: 'Square Cloud Action'
 description: 'Deploy your application to square cloud using Github Actions'
 author: 'richaardev'
 branding:
@@ -6,19 +6,16 @@ branding:
   color: gray-dark
 
 inputs:
-  excludes:
-    required: false
-    description: 'excludes some files'
-    default: '.git'
   token:
     required: true
-    description: 'square cloud api token'
-  application_id:
+    description: 'Square Cloud api token'
+  command:
     required: true
-    description: 'square cloud application id'
-  restart:
+    description: 'Command you want to execute'
+  cwd:
     required: false
-    description: 'restart aplication after upload'
+    default: "."
+    description: 'Command you want to execute'
 
 runs:
   using: 'node20'

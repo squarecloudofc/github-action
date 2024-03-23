@@ -1,28 +1,22 @@
 import * as core from "@actions/core";
-import { SquareCloudAPI } from "@squarecloud/api";
-import { zipProject } from "./zip";
+import * as exec from "@actions/exec";
+
+import { getInputs } from "./context";
+import { install } from "./cli";
 
 async function run(): Promise<void> {
   try {
-    const token: string = core.getInput("token", { required: true });
-    const id: string = core.getInput("application_id", { required: true });
-    const restart: boolean = core.getBooleanInput("restart");
-    const excludesString: string = core.getInput("excludes");
-    const excludes = excludesString.trim() == "" ? [] : excludesString.trim().split(" ");
+    const { cwd, command, token } = getInputs()
 
-    const buffer = zipProject(excludes);
+    const cliBinary = await install()
+    core.info(`CLI Installed successfully`)
 
-    const api = new SquareCloudAPI(token);
-    const application = await api.applications.get(id);
-
-    core.debug(`Application: ${application.name} (${application.id})`);
-    
-    if (application == undefined) {
-      core.setFailed("Square Cloud returned undefined");
-      return;
+    if (cwd && cwd != ".") {
+      core.info(`Using ${cwd} as Current Working Directory`)
+      process.chdir(cwd)
     }
 
-    await application.commit(buffer, "application.zip", restart);
+    await exec.exec(`${cliBinary} --token=${token} ${command}`)
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message);
     else core.setFailed("Unknown error");
