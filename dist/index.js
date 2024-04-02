@@ -32785,12 +32785,12 @@ function getPlatform() {
 }
 exports.getPlatform = getPlatform;
 function getArch() {
-    const arch = node_os_1.default.arch();
+    let arch = node_os_1.default.arch();
+    if (arch === "x64") {
+        arch = "amd64";
+    }
     if (!supportedArchs.includes(arch)) {
         throw new Error(`Unsupported architecture: ${arch}`);
-    }
-    if (arch === "x64") {
-        return "amd64";
     }
     return arch;
 }
