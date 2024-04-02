@@ -28,14 +28,15 @@ export function getPlatform(): string {
 }
 
 export function getArch(): string {
-  const arch = os.arch()
+  let arch = os.arch()
+  if (arch === "x64") {
+    arch = "amd64"
+  }
+
   if (!supportedArchs.includes(arch)) {
     throw new Error(`Unsupported architecture: ${arch}`)
   }
 
-  if (arch === "x64") {
-    return "amd64"
-  }
 
   return arch
 }
