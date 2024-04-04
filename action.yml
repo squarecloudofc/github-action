@@ -10,8 +10,12 @@ inputs:
     required: true
     description: 'Square Cloud API token'
   command:
-    required: true
-    description: 'Arguments to pass to Square Cloud CLI'
+    required: false
+    description: 'Commands to pass to Square Cloud CLI'
+  install-only:
+    required: false
+    default: 'false'
+    description: 'Install only Square Cloud CLI and add to path'
   workdir:
     required: false
     default: "."

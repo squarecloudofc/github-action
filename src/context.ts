@@ -5,6 +5,7 @@ export interface ActionInputs {
   token: string;
   command: string;
   workdir: string;
+  installOnly: boolean;
 }
 
 export function getInputs(): ActionInputs {
@@ -12,6 +13,7 @@ export function getInputs(): ActionInputs {
     token: core.getInput("token", { required: true }),
     command: core.getInput("command", { required: true }),
     workdir: core.getInput("cwd") || ".",
+    installOnly: core.getBooleanInput("install-only") || false,
   }
 }
 

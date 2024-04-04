@@ -6,7 +6,7 @@ import { install } from "./cli";
 
 async function run(): Promise<void> {
   try {
-    const { workdir: cwd, command, token } = getInputs()
+    const { workdir: cwd, command, token, installOnly } = getInputs()
 
     const cliBinary = await install()
     core.info(`CLI Installed successfully`)
@@ -16,7 +16,16 @@ async function run(): Promise<void> {
       process.chdir(cwd)
     }
 
-    await exec.exec(`${cliBinary} --token=${token} ${command}`)
+    await exec.exec(`${cliBinary} login --token=${token}`)
+    core.debug(`Successfully logged to Square Cloud`)
+
+    if (installOnly) {
+      core.addPath(cliBinary)
+      core.debug(`Added ${cliBinary} to path`)
+      return
+    }
+
+    await exec.exec(`${cliBinary} ${command}`)
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message);
     else core.setFailed("Unknown error");
