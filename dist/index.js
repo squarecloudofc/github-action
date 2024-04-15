@@ -32769,7 +32769,7 @@ const node_os_1 = __importDefault(__nccwpck_require__(612));
 function getInputs() {
     return {
         token: core.getInput("token", { required: true }),
-        command: core.getInput("command", { required: true }),
+        command: core.getInput("command"),
         workdir: core.getInput("cwd") || ".",
         installOnly: core.getBooleanInput("install-only") || false,
     };

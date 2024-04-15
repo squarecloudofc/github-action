@@ -11,7 +11,7 @@ export interface ActionInputs {
 export function getInputs(): ActionInputs {
   return {
     token: core.getInput("token", { required: true }),
-    command: core.getInput("command", { required: true }),
+    command: core.getInput("command"),
     workdir: core.getInput("cwd") || ".",
     installOnly: core.getBooleanInput("install-only") || false,
   }
