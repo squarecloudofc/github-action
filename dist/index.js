@@ -32771,6 +32771,7 @@ function getInputs() {
         token: core.getInput("token", { required: true }),
         command: core.getInput("command", { required: true }),
         workdir: core.getInput("cwd") || ".",
+        installOnly: core.getBooleanInput("install-only") || false,
     };
 }
 exports.getInputs = getInputs;
@@ -32834,14 +32835,21 @@ const context_1 = __nccwpck_require__(8954);
 const cli_1 = __nccwpck_require__(6733);
 async function run() {
     try {
-        const { workdir: cwd, command, token } = (0, context_1.getInputs)();
+        const { workdir: cwd, command, token, installOnly } = (0, context_1.getInputs)();
         const cliBinary = await (0, cli_1.install)();
         core.info(`CLI Installed successfully`);
         if (cwd && cwd != ".") {
             core.info(`Using ${cwd} as Current Working Directory`);
             process.chdir(cwd);
         }
-        await exec.exec(`${cliBinary} --token=${token} ${command}`);
+        await exec.exec(`${cliBinary} login --token=${token}`);
+        core.debug(`Successfully logged to Square Cloud`);
+        if (installOnly) {
+            core.addPath(cliBinary);
+            core.debug(`Added ${cliBinary} to path`);
+            return;
+        }
+        await exec.exec(`${cliBinary} ${command}`);
     }
     catch (error) {
         if (error instanceof Error)
