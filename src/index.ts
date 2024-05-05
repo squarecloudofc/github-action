@@ -19,11 +19,10 @@ async function run(): Promise<void> {
     await exec.exec(`${cliBinary} login --token=${token}`)
     core.debug(`Successfully logged to Square Cloud`)
 
-    if (installOnly) {
-      core.addPath(cliBinary)
-      core.debug(`Added ${cliBinary} to path`)
-      return
-    }
+    core.addPath(cliBinary)
+    core.debug(`Added ${cliBinary} to path`)
+
+    if (installOnly) return
 
     await exec.exec(`${cliBinary} ${command}`)
   } catch (error) {
