@@ -3,6 +3,7 @@ import * as exec from "@actions/exec";
 
 import { getInputs } from "./context";
 import { install } from "./cli";
+import { dirname } from "path";
 
 async function run(): Promise<void> {
   try {
@@ -19,7 +20,7 @@ async function run(): Promise<void> {
     await exec.exec(`${cliBinary} login --token=${token}`)
     core.debug(`Successfully logged to Square Cloud`)
 
-    core.addPath(cliBinary)
+    core.addPath(dirname(cliBinary))
     core.debug(`Added ${cliBinary} to path`)
 
     if (installOnly) return

@@ -33002,6 +33002,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const context_1 = __nccwpck_require__(8954);
 const cli_1 = __nccwpck_require__(6733);
+const path_1 = __nccwpck_require__(1017);
 async function run() {
     try {
         const { workdir: cwd, command, token, installOnly } = (0, context_1.getInputs)();
@@ -33013,7 +33014,7 @@ async function run() {
         }
         await exec.exec(`${cliBinary} login --token=${token}`);
         core.debug(`Successfully logged to Square Cloud`);
-        core.addPath(cliBinary);
+        core.addPath((0, path_1.dirname)(cliBinary));
         core.debug(`Added ${cliBinary} to path`);
         if (installOnly)
             return;
