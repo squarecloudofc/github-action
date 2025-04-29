@@ -17,7 +17,7 @@ async function run(): Promise<void> {
       process.chdir(cwd)
     }
 
-    await exec.exec(`${cliBinary} login --token=${token}`)
+    await exec.exec(`${cliBinary} auth login --token=${token}`)
     core.debug(`Successfully logged to Square Cloud`)
 
     core.addPath(dirname(cliBinary))
