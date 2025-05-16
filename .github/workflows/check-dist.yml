@@ -6,10 +6,10 @@ on:
     branches:
       - master
     paths-ignore:
-      - '**.md'
+      - "**.md"
   pull_request:
     paths-ignore:
-      - '**.md'
+      - "**.md"
   workflow_dispatch:
 
 jobs:
@@ -27,9 +27,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 22
           cache: npm
 
       - name: Install Dependencies
@@ -40,9 +40,16 @@ jobs:
         id: build
         run: npm run bundle
 
-      - name: Compare Expected and Actual Directories
+      # This will fail the workflow if the `dist/` directory is different than
+      # expected.
+      - name: Compare Directories
         id: diff
         run: |
+          if [ ! -d dist/ ]; then
+            echo "Expected dist/ directory does not exist.  See status below:"
+            ls -la ./
+            exit 1
+          fi
           if [ "$(git diff --ignore-space-at-eol --text dist/ | wc -l)" -gt "0" ]; then
             echo "Detected uncommitted changes after build. See status below:"
             git diff --ignore-space-at-eol --text dist/
@@ -56,3 +63,4 @@ jobs:
         with:
           name: dist
           path: dist/
+
