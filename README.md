@@ -1,8 +1,10 @@
-![Square Cloud](https://cdn.discordapp.com/attachments/994857159575740486/1309613607109263390/image.png?ex=67423837&is=6740e6b7&hm=9e79d237f95c317a0dfe1a4e2b559d4325db62f590afed0e7eab9a195488b694&)
+<div align="center">
+  <img alt="Square Cloud Banner" src="https://cdn.squarecloud.app/png/github-readme.png">
+</div>
 
-# Square Cloud Action
+<h1 align="center">Square Cloud Action</h1>
 
-The easiest way to integrate your Square Cloud app with GIT, commit your app from github workflows.
+<p align="center">The easiest way to integrate your Square Cloud app with GIT, commit your app from github workflows.</p>
 
 ## Usage
 
