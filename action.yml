@@ -1,25 +1,25 @@
-name: 'Square Cloud Action'
-description: 'Deploy your application to square cloud using Github Actions'
-author: 'richaardev'
+name: "Square Cloud Action"
+description: "Deploy your application to square cloud using Github Actions"
+author: "richaardev"
 branding:
-  icon: square
+  icon: activity
   color: gray-dark
 inputs:
   token:
     required: true
-    description: 'Square Cloud API token'
+    description: "Square Cloud API token"
   command:
     required: false
-    description: 'Commands to pass to Square Cloud CLI'
+    description: "Commands to pass to Square Cloud CLI"
   install-only:
     required: false
-    default: 'false'
-    description: 'Install only Square Cloud CLI and add to path'
+    default: "false"
+    description: "Install only Square Cloud CLI and add to path"
   workdir:
     required: false
     default: "."
-    description: 'Working Directory'
+    description: "Working Directory"
 
 runs:
-  using: 'node20'
-  main: 'dist/index.js'
+  using: "node20"
+  main: "dist/index.js"
