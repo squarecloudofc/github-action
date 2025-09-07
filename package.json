@@ -10,8 +10,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "bundle": "npm run package",
-    "package": "ncc build src/index.ts --license licenses.txt"
+    "build": "ncc build src/index.ts --license licenses.txt"
   },
   "exports": {
     ".": "./dist/index.js"
