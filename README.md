@@ -42,9 +42,9 @@ jobs:
     steps:
       - name: Setup Square Cloud
         uses: squarecloudofc/github-action@v2
-        # in the run command you can add the --restart flag to restart your application after the commit 
+        # in "command" you can add the --restart flag to restart your application after the commit
         with:
-          run: commit ${{ secrets.SQUARE_APPLICATION_ID }}
+          command: commit ${{ secrets.SQUARE_APPLICATION_ID }}
           token: '${{ secrets.SQUARE_TOKEN }}'
 
 ```
