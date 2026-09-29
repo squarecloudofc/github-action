@@ -135,6 +135,30 @@ jobs:
           command: commit ${{ vars.SQUARECLOUD_APP_ID }} --restart
 ```
 
+### Environment variables from secrets
+
+Keep tokens and passwords in GitHub secrets and send them to the application before each deploy. `env set` adds or updates only the variables it lists, and the restart after the commit loads them.
+
+```yaml
+- uses: squarecloudofc/github-action@v2
+  with:
+    token: ${{ secrets.SQUARECLOUD_API_KEY }}
+    install-only: true
+
+- name: Update environment variables
+  run: squarecloud app env set --app "$APP_ID" "DISCORD_TOKEN='$DISCORD_TOKEN'" "DATABASE_URL='$DATABASE_URL'"
+  env:
+    APP_ID: ${{ vars.SQUARECLOUD_APP_ID }}
+    DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+    DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+- run: squarecloud commit ${{ vars.SQUARECLOUD_APP_ID }} --restart
+```
+
+The application reads its variables the way a shell does, so a value with spaces or characters such as `$`, `&`, `;` or `|` needs quotes inside the value. Single quotes, as above, keep the value exactly as written; if the value itself has a single quote, use double quotes and put a backslash before any `$`, `` ` ``, `"` or `\` in it.
+
+Passing the secrets through `env`, instead of writing `${{ secrets.X }}` in the command, keeps their values out of the script that GitHub runs.
+
 ### Deploy a subfolder with a pinned CLI version
 
 ```yaml
