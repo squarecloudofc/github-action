@@ -51,6 +51,90 @@ Every push to `main` now sends the repository to your application and restarts i
 
 ## Examples
 
+Snippets that are not a full workflow show only the steps; keep `actions/checkout` before them.
+
+### Staging and production
+
+Pushes to `main` go to production and pushes to `develop` to staging. The run button in the Actions tab deploys the chosen branch by hand, and `concurrency` makes deploys of the same branch wait for each other instead of overlapping.
+
+```yaml
+name: Deploy
+
+on:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref_name }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: squarecloudofc/github-action@v2
+        with:
+          token: ${{ secrets.SQUARECLOUD_API_KEY }}
+          command: commit ${{ github.ref_name == 'main' && vars.PRODUCTION_APP_ID || vars.STAGING_APP_ID }} --restart
+```
+
+### Several applications in one repository
+
+Each folder is its own application, with its own `squarecloud.app` and `squarecloud.ignore`. `fail-fast: false` keeps one failed deploy from cancelling the others.
+
+```yaml
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - folder: bot
+            app: ${{ vars.BOT_APP_ID }}
+          - folder: website
+            app: ${{ vars.WEBSITE_APP_ID }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: squarecloudofc/github-action@v2
+        with:
+          token: ${{ secrets.SQUARECLOUD_API_KEY }}
+          workdir: ${{ matrix.folder }}
+          command: commit ${{ matrix.app }} --restart
+```
+
+### Deploy when a release is published
+
+Only the code of a published release reaches the application; pushes and drafts do not.
+
+```yaml
+name: Deploy
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: squarecloudofc/github-action@v2
+        with:
+          token: ${{ secrets.SQUARECLOUD_API_KEY }}
+          command: commit ${{ vars.SQUARECLOUD_APP_ID }} --restart
+```
+
 ### Deploy a subfolder with a pinned CLI version
 
 ```yaml
@@ -95,6 +179,8 @@ The [CLI documentation](https://github.com/squarecloudofc/cli#ignoring-files) ha
 
 ## Running the CLI in a workflow
 
+- `commit --restart` restarts the application after the upload, and starts it if it was stopped. Without `--restart`, the new files only run after the next restart.
+- `commit` without an application ID uses the `ID=` line of the `squarecloud.app` in `workdir`, so `command: commit --restart` is enough once that line is there.
 - Commands that change or delete data (`app delete`, `env replace`, `snapshot restore`, ...) ask for confirmation. A workflow has no terminal to answer, so add `-y`; without it, the command exits with code 1 and changes nothing.
 - Commands that print data accept `--json` for machine-readable output.
 - To trace each API request, set `SQUARECLOUD_DEBUG: 1` in the step's `env`. The trace shows method, path, status and duration, never headers or bodies.
