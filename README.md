@@ -39,7 +39,7 @@ Every push to `main` now sends the repository to your application and restarts i
 | ----- | -------- | ------- | ----------- |
 | `token` | yes | | Square Cloud API key. Keep it in a secret. |
 | `command` | no | | CLI command to run, without the `squarecloud` prefix, for example `commit <app id> --restart`. |
-| `version` | no | `latest` | CLI version to install: `latest`, or a version from 3.1.0 on, such as `3.1.0`. |
+| `version` | no | `latest` | CLI version to install: `latest`, or a version from 3.1.0 on, such as `3.1.1`. |
 | `workdir` | no | `.` | Folder the command runs in, relative to the repository root. |
 | `install-only` | no | `false` | Only install the CLI, to run it in later steps. |
 
@@ -146,7 +146,7 @@ Keep tokens and passwords in GitHub secrets and send them to the application bef
     install-only: true
 
 - name: Update environment variables
-  run: squarecloud app env set --app "$APP_ID" "DISCORD_TOKEN='$DISCORD_TOKEN'" "DATABASE_URL='$DATABASE_URL'"
+  run: squarecloud app env set --app "$APP_ID" "DISCORD_TOKEN=$DISCORD_TOKEN" "DATABASE_URL=$DATABASE_URL"
   env:
     APP_ID: ${{ vars.SQUARECLOUD_APP_ID }}
     DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
@@ -155,7 +155,7 @@ Keep tokens and passwords in GitHub secrets and send them to the application bef
 - run: squarecloud commit ${{ vars.SQUARECLOUD_APP_ID }} --restart
 ```
 
-The application reads its variables the way a shell does, so a value with spaces or characters such as `$`, `&`, `;` or `|` needs quotes inside the value. Single quotes, as above, keep the value exactly as written; if the value itself has a single quote, use double quotes and put a backslash before any `$`, `` ` ``, `"` or `\` in it.
+The application reads its variables through a shell, so the CLI sends a value with spaces or characters such as `$`, `&`, `;` or `|` in quotes, and the application receives it exactly as stored in the secret. This needs CLI 3.1.1 or later; with 3.1.0, wrap each value in single quotes yourself, as in `"DATABASE_URL='$DATABASE_URL'"`.
 
 Passing the secrets through `env`, instead of writing `${{ secrets.X }}` in the command, keeps their values out of the script that GitHub runs.
 
@@ -165,7 +165,7 @@ Passing the secrets through `env`, instead of writing `${{ secrets.X }}` in the 
 - uses: squarecloudofc/github-action@v2
   with:
     token: ${{ secrets.SQUARECLOUD_API_KEY }}
-    version: 3.1.0
+    version: 3.1.1
     workdir: bot
     command: commit ${{ vars.SQUARECLOUD_APP_ID }} --restart
 ```
