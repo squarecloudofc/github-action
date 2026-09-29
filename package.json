@@ -1,16 +1,17 @@
 {
   "name": "squarecloud-action",
-  "description": "Deploy your applications to SquareCloud using Github Actions",
+  "description": "Deploy your applications to Square Cloud from GitHub Actions",
   "version": "0.0.0",
   "private": true,
   "keywords": [],
   "author": "richaardev <richard@squarecloud.app>",
   "license": "MIT",
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "scripts": {
-    "build": "ncc build src/index.ts --license licenses.txt"
+    "build": "ncc build src/index.ts --license licenses.txt",
+    "test": "node --test src/*.test.ts"
   },
   "exports": {
     ".": "./dist/index.js"
@@ -23,14 +24,14 @@
     "url": "https://github.com/squarecloudofc/github-action/issues"
   },
   "dependencies": {
-    "@actions/core": "^1.11.1",
-    "@actions/exec": "^1.1.1",
-    "@actions/tool-cache": "^2.0.2",
-    "@octokit/rest": "^22.0.0"
+    "@actions/core": "^3.0.1",
+    "@actions/exec": "^3.0.0",
+    "@actions/tool-cache": "^4.0.0"
   },
   "devDependencies": {
-    "@types/node": "^22.15.3",
-    "@vercel/ncc": "^0.38.3",
-    "typescript": "^5.8.3"
-  }
+    "@types/node": "^26.6.3",
+    "@vercel/ncc": "^0.45.0",
+    "typescript": "^6.0.3"
+  },
+  "type": "module"
 }

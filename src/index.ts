@@ -1,35 +1,32 @@
 import * as core from "@actions/core";
 import * as exec from "@actions/exec";
+import { dirname } from "node:path";
 
-import { getInputs } from "./context";
-import { install } from "./cli";
-import { dirname } from "path";
+import { install, resolveVersion } from "./cli.js";
+import { getInputs } from "./context.js";
 
 async function run(): Promise<void> {
-  try {
-    const { workdir: cwd, command, token, installOnly } = getInputs()
+  const { token, command, version, workdir, installOnly } = getInputs();
+  core.setSecret(token);
 
-    const cliBinary = await install()
-    core.info(`CLI Installed successfully`)
+  const resolved = await resolveVersion(version);
+  const binary = await install(resolved);
+  core.addPath(dirname(binary));
+  core.info(`Square Cloud CLI ${resolved} is on the PATH`);
 
-    if (cwd && cwd != ".") {
-      core.info(`Using ${cwd} as Current Working Directory`)
-      process.chdir(cwd)
-    }
+  // The CLI reads its key from this variable: nothing is written to the
+  // runner's disk, and later steps of this job can run `squarecloud` too.
+  core.exportVariable("SQUARECLOUD_API_KEY", token);
 
-    await exec.exec(`${cliBinary} auth login --token=${token}`)
-    core.debug(`Successfully logged to Square Cloud`)
-
-    core.addPath(dirname(cliBinary))
-    core.debug(`Added ${cliBinary} to path`)
-
-    if (installOnly) return
-
-    await exec.exec(`${cliBinary} ${command}`)
-  } catch (error) {
-    if (error instanceof Error) core.setFailed(error.message);
-    else core.setFailed("Unknown error");
+  if (installOnly) return;
+  if (!command) {
+    core.warning("No `command` given: the CLI is installed, nothing was run.");
+    return;
   }
+
+  await exec.exec(`"${binary}" ${command}`, [], { cwd: workdir });
 }
 
-run();
+run().catch((error: unknown) => {
+  core.setFailed(error instanceof Error ? error.message : String(error));
+});

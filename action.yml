@@ -1,5 +1,5 @@
 name: "Square Cloud Action"
-description: "Deploy your application to square cloud using Github Actions"
+description: "Deploy your application to Square Cloud from GitHub Actions"
 author: "richaardev"
 branding:
   icon: activity
@@ -7,18 +7,22 @@ branding:
 inputs:
   token:
     required: true
-    description: "Square Cloud API token"
+    description: "Square Cloud API key. Store it as a repository secret."
   command:
     required: false
-    description: "Commands to pass to Square Cloud CLI"
-  install-only:
+    description: "Square Cloud CLI command to run, without the `squarecloud` prefix, for example `commit <app id> --restart`"
+  version:
     required: false
-    default: "false"
-    description: "Install only Square Cloud CLI and add to path"
+    default: "latest"
+    description: "Square Cloud CLI version to install, 3.1.0 or later, for example `3.1.0`"
   workdir:
     required: false
     default: "."
-    description: "Working Directory"
+    description: "Folder the command runs in"
+  install-only:
+    required: false
+    default: "false"
+    description: "Only install the CLI and set SQUARECLOUD_API_KEY, for later steps of the job"
 
 runs:
   using: node24

@@ -1,0 +1,65 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - "**.md"
+  pull_request:
+    paths-ignore:
+      - "**.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, windows-11-arm, macos-latest]
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # No real key: `--version` and `zip` never reach the API.
+      - name: Install only
+        uses: ./
+        with:
+          token: not-a-real-key
+          install-only: true
+
+      - name: The CLI and its key are available to later steps
+        run: |
+          squarecloud --version
+          test "$SQUARECLOUD_API_KEY" = not-a-real-key
+
+      - name: Sample project
+        run: |
+          mkdir -p sample/src sample/node_modules/dep
+          echo "console.log('hi')" > sample/src/index.js
+          echo "{}" > sample/package-lock.json
+          echo "module.exports = 1" > sample/node_modules/dep/index.js
+          printf 'MAIN=src/index.js\nMEMORY=256\n' > sample/squarecloud.app
+
+      - name: Run a command in a folder, pinned version
+        uses: ./
+        with:
+          token: not-a-real-key
+          version: 3.1.0
+          command: zip
+          workdir: sample
+
+      - name: The zip leaves out node_modules and the lockfile
+        run: |
+          $(command -v python || command -v python3) -m zipfile -l sample/sample.zip | tee listing.txt
+          grep -q "src/index.js" listing.txt
+          ! grep -q -e node_modules -e package-lock.json listing.txt
