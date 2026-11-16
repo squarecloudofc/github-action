@@ -112,6 +112,8 @@ jobs:
           command: commit ${{ matrix.app }} --restart
 ```
 
+Square Cloud accepts only a few large uploads at a time from one account. With many applications in the matrix, add `max-parallel: 2` under `strategy` so the uploads don't get a `429 RATE_LIMITED`.
+
 ### Deploy when a release is published
 
 Only the code of a published release reaches the application; pushes and drafts do not.
@@ -155,7 +157,7 @@ Keep tokens and passwords in GitHub secrets and send them to the application bef
 - run: squarecloud commit ${{ vars.SQUARECLOUD_APP_ID }} --restart
 ```
 
-The application reads its variables through a shell, so the CLI sends a value with spaces or characters such as `$`, `&`, `;` or `|` in quotes, and the application receives it exactly as stored in the secret. This needs CLI 3.1.1 or later; with 3.1.0, wrap each value in single quotes yourself, as in `"DATABASE_URL='$DATABASE_URL'"`.
+The application reads its variables through a shell, so a value with spaces or characters such as `$`, `&`, `;` or `|` has to reach it in quotes. Square Cloud quotes every value it stores, and the CLI does too, so the application receives the value exactly as stored in the secret, with no quoting on your side.
 
 Passing the secrets through `env`, instead of writing `${{ secrets.X }}` in the command, keeps their values out of the script that GitHub runs.
 
